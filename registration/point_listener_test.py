@@ -3,6 +3,7 @@ from geometry_msgs.msg import Point
 from ros_igtl_bridge.msg import igtlpoint
 import os
 
+txt_nome = "slicer_points.txt"
 
 def callback(data):
     name = data.name
@@ -19,9 +20,9 @@ def callback(data):
     # log com historico de pontos recebidos com horario e data (em local especifico)
 
     if id == "1":
-        open("points.txt", "w").close() # apaga arquivo a cada recebimento dos pontos 
+        open(txt_nome, "w").close() # apaga arquivo a cada recebimento dos pontos 
 
-    with open("points.txt", "a") as file:
+    with open(txt_nome, "a") as file:
         file.write(msg + "\n")
 
    
@@ -38,6 +39,6 @@ def sub():
     rospy.spin()
 
 if __name__ == "__main__":
-    with open("points.txt", "w") as file:
+    with open(txt_nome, "w") as file:
         file.flush()
     sub()
