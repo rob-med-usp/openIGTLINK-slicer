@@ -12,7 +12,8 @@ def callback(data):
     z = data.pointdata.z
 
     id = name[-1:]
-    rospy.loginfo('PONTO RECEBIDO: Nome: %s; x: %f; y: %f; x: %f;', name, x, y, z)
+    # rospy.loginfo("\x1b[H")
+    rospy.loginfo('PONTO RECEBIDO: Nome: %s; x: %f; y: %f; z: %f;', name, x, y, z)
     msg = f"{x:.2f} {y:.2f} {z:.2f} {id}" # <-- Ajustar precisão do registro com essas casas decimais
     print(msg + "\n")
 
