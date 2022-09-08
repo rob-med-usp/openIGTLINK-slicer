@@ -1,7 +1,11 @@
+
+
+
 class Registration:
     # slicer_buffer = ""
 
-    def __init__(self):
+    def __init__(self, num):
+        # self.s_points = []
         self.s_points = [[[], [], []],
                     [[], [], []],
                     [[], [], []],
@@ -14,6 +18,7 @@ class Registration:
                         [[], [], []],
                         [[], [], []],
                         [[], [], []]]
+        self.n = num
         
     # def show_points(self, type):
     #     if type == 1:
@@ -27,12 +32,12 @@ class Registration:
 
         parsed_p = buffer_p
 
-        for i in range(4): # setando para os 4 pontos fiduciais
+        for i in range(self.n ): # setando para os 4 pontos fiduciais
             self.s_points[i][0] = parsed_p[i].split()[0] # setando x
             self.s_points[i][1] = parsed_p[i].split()[1] # y
             self.s_points[i][2] = parsed_p[i].split()[2] # z
 
-        for i in range(4):
+        for i in range(self.n ):
             if self.s_points[i][0] == "" or self.s_points[i][1] == "" or self.s_points[i][2] == "":
                 print("ERRO: Pontos não foram corretamente preenchidos: \n")
                 print(self.s_points)
@@ -52,7 +57,7 @@ class Registration:
                 return False
             
 
-            for i in range(4):
+            for i in range(self.n ):
                 if slicer_buffer[i][-2] != f'{i+1}':
                     print(slicer_buffer[i][-2])
                     print(f"WARNING: Linha de index {i} não foi lida.")
@@ -63,12 +68,20 @@ class Registration:
             else:
                 return False
 
-    
+    def robot_read(self):
+        # para fins de testes, simularei as coordenadas do robo
 
+        add = ''
+        for i in range(self.n ): # setando para os 4 pontos do robo
+            self.r_points[i][0] = self.s_points[i][0] + add # setando x
+            self.r_points[i][1] = self.s_points[i][0] + add# y
+            self.r_points[i][2] = self.s_points[i][0] + add# z
+        
+        return True
 
 def main():
 
-    registration = Registration()
+    registration = Registration(4)
     print(f"operaçao retornou {registration.slicer_read()}")
 
 
