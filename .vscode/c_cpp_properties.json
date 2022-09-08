@@ -1,0 +1,29 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/opt/ros/noetic/include/**",
+        "/home/jose_carlosa13/catkin_ws/devel/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/gazebo_ros_link_attacher/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/desafioPetrobras_022/mark2/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/mav_comm/mav_msgs/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/mav_comm/mav_planning_msgs/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/sitl_gazebo/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/ros_beginner_tutorial/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/ROS-IGTL-Bridge/include/**",
+        "/home/jose_carlosa13/catkin_ws/src/mavros_offboard_control/uav_control/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}
