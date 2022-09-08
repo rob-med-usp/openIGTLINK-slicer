@@ -1,0 +1,2 @@
+# Integração do software 3D Slicer com braço robótico KUKA iiwa 14 
+Uso do software Open Source [**3D Slicer**](https://www.slicer.org/) para planejamento de cirurgia com auxílio do braço robótico. Comunicação estabelecida através do protocolo [**OpenIGTLink**](http://openigtlink.org/) e arquitetura [**ROS**](https://www.ros.org/) pelo pacote [**ROS-IGTL-Bridge**](https://github.com/openigtlink/ROS-IGTL-Bridge).
