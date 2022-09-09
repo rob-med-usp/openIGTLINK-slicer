@@ -15,6 +15,7 @@ from datetime import datetime
 # import registration.py
 # from scripts.registration.registration import Registration
 from registration import Registration
+import pickle
 
 reg = Registration(4)
 # reg.slicer_read()
@@ -115,7 +116,11 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
     print("a", a)
     pointA_Alpha = numpy.array(a)
     pointA_Alpha = numpy.append(pointA_Alpha, 1)
+
+    # multiplicação que transforma os pontos:
     pointA_Beta = alphaToBetaMatrix.MultiplyFloatPoint(pointA_Alpha)
+
+
     print("b", pointA_Beta)
     b = betaPoints.GetPoint(i)
     pointB_Beta = numpy.array(b)
@@ -125,7 +130,7 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
 
   print("Average distance after registration: " + str(average))
 
-
+  
   ####################### saida em txt (armazenamento da matriz)
 
   txt = ''
@@ -134,7 +139,7 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
         ele = alphaToBetaMatrix.GetElement(i, j)
         print(ele) # retorna elemento por elemento
         txt = f"{txt} {ele}"
-      txt = txt + "\n"
+      # txt = txt + " "
 
 
   now = datetime.now().time().strftime("%H:%M:%S") # time object
@@ -143,21 +148,26 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
   # print("time =", now)
 
 
-  txt = txt + f'Matriz transformação gerada em -> Horário: {now}; Data (ano-mês-dia): {date}'
-  print(txt)
+  txtM = txt + f'Matriz transformação gerada em -> Horário: {now}; Data (ano-mês-dia): {date}'
+  print(txtM)
 
 
   cur_path = os.path.dirname(__file__)
   new_path = cur_path + 'out/matrix-reg.txt'
   # new_path = os.path.relpath('/out/matrix-reg.txt', cur_path)
 
+  # salva matriz como txt para visualizaçao e checagem
   with open(new_path, 'w') as file:
-    file.write(txt)
+    file.write(txtM)
   
-  print("\n\nAVALIAÇÃO DO CORREGISTRO\n")
-  for i in range(reg.n):
-    pointA_Beta = alphaToBetaMatrix.MultiplyFloatPoint(pointA_Alpha)
-    print("")
+  # salva os dados da matrix em vtk em binario para importaçao no codigo de controle
+  new_path = cur_path + 'out/matrix.p'
+  
+
+  with open( new_path, "wb" ) as f:
+
+
+	  pickle.dump( txt, f)
       
 
 else:
