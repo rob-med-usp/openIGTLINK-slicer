@@ -75,8 +75,8 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
     # yy = y+noise[i*3+1]
     # zz = z+noise[i*3+2]
     xx = float(reg.r_points[i][0])
-    yy = float(reg.r_points[i][0])
-    zz = float(reg.r_points[i][0])
+    yy = float(reg.r_points[i][1])
+    zz = float(reg.r_points[i][2])
 
     numFids = betaFids.AddFiducial(xx, yy, zz)
     numPoints = betaPoints.InsertNextPoint(xx, yy, zz)
@@ -112,9 +112,11 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
   for i in range(N):
     numbersSoFar = numbersSoFar + 1
     a = alphaPoints.GetPoint(i)
+    print("a", a)
     pointA_Alpha = numpy.array(a)
     pointA_Alpha = numpy.append(pointA_Alpha, 1)
     pointA_Beta = alphaToBetaMatrix.MultiplyFloatPoint(pointA_Alpha)
+    print("b", pointA_Beta)
     b = betaPoints.GetPoint(i)
     pointB_Beta = numpy.array(b)
     pointB_Beta = numpy.append(pointB_Beta, 1)
@@ -146,11 +148,16 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
 
 
   cur_path = os.path.dirname(__file__)
-  new_path = cur_path + '/matrix-reg.txt'
+  new_path = cur_path + 'out/matrix-reg.txt'
   # new_path = os.path.relpath('/out/matrix-reg.txt', cur_path)
 
   with open(new_path, 'w') as file:
     file.write(txt)
+  
+  print("\n\nAVALIAÇÃO DO CORREGISTRO\n")
+  for i in range(reg.n):
+    pointA_Beta = alphaToBetaMatrix.MultiplyFloatPoint(pointA_Alpha)
+    print("")
       
 
 else:

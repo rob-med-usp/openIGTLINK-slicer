@@ -71,11 +71,13 @@ class Registration:
     def robot_read(self):
         # para fins de testes, simularei as coordenadas do robo
 
-        add = ''
+        add = 5.0
         for i in range(self.n ): # setando para os 4 pontos do robo
-            self.r_points[i][0] = self.s_points[i][0] + add # setando x
-            self.r_points[i][1] = self.s_points[i][0] + add# y
-            self.r_points[i][2] = self.s_points[i][0] + add# z
+            self.r_points[i][0] = float(self.s_points[i][0]) + add # setando x
+            self.r_points[i][1] = float(self.s_points[i][1]) + add # y
+            self.r_points[i][2] = float(self.s_points[i][2]) + add # z
+
+        print(self.r_points)
         
         return True
 
