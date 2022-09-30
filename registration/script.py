@@ -17,7 +17,7 @@ from datetime import datetime
 from registration import Registration
 import pickle
 
-reg = Registration(4)
+reg = Registration(3)
 # reg.slicer_read()
 # reg.robot_read()
 
@@ -31,7 +31,7 @@ if reg.slicer_read() and reg.robot_read(): # and reg.robot_read
 
   # Experiment parameters (start from here if you have alphaToBeta already)
 
-  N = 4         # Number of fiducials
+  N = 3         # Number of fiducials
   Scale = 100.0  # Size of space where fiducial are placed
   Sigma = 2.0    # Radius of random error
 
