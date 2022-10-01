@@ -238,18 +238,22 @@ class MarckupClass(fist_InterfaceWidget):
             newMarkup = f"fiducial_{self.mMarkupid.count+1}"
             self.mMarkupid.addItem(newMarkup)
             self.mMarkupid.setCurrentIndex(self.mMarkupid.count-1)
+            self.coordX.clear()
+            self.coordY.clear()
+            self.coordZ.clear()
 
         if action == "Delete":
             self.mMarkupid.removeItem(id)
             self.tnode.RemoveNthControlPoint(id)
-            
+            self.coordX.clear()
+            self.coordY.clear()
+            self.coordZ.clear()
 
-        
         if action == "Apply":
            # print(self.tnode.GetNthControlPointPosition(id))
             self.mMarkupid.currentIndex
             self.tnode.SetNthControlPointPosition(id, self.coordX.value, self.coordY.value, self.coordZ.value)
-            self.coordX.cleanText
+            
   
         
     def setupMarkup(self):
