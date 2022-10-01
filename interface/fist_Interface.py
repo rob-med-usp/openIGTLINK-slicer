@@ -1,6 +1,6 @@
 import logging
 import os
-from select import select
+import numpy as np
 import slicer, ctk, vtk, qt
 from slicer.ScriptedLoadableModule import *
 from PyQt5.QtWidgets import *
@@ -183,83 +183,13 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         reloadFormLayout.addRow(self.createHLayout([self.reloadButton, self.reloadAndTestButton, self.restartButton]))
 
    
-    def debug(self, applyMarkup = False):
-        if applyMarkup==2:  
-            self.tnode.GetDisplayNode().SetVisibility(True)
-            applyMarkup = 0     
-            
-        else:
-            self.tnode.GetDisplayNode().SetVisibility(False)
-            applyMarkup = 2
-            
+   
     def setup(self):
         # Instantiate and connect default widgets ...
         self.setupDeveloperSection()
 
-    #################################################################
-        # TESTE
-        self.tnode = slicer.vtkMRMLMarkupsFiducialNode()
-        slicer.mrmlScene.AddNode(self.tnode)
-        self.tnode.SetName("fiducial out")
-        self.tnode.GetDisplayNode().SetSelectedColor(1,1,0)
-        self.tnode.AddControlPointWorld(50, 0, 0)
-        self.tnode.AddControlPointWorld(0, 50, 0)
-        self.tnode.AddControlPointWorld(0, 0, 50)
-        self.tnode.GetDisplayNode().SetVisibility(False)
-    #################################################################
-
-        # MARKUP AREA
-        self.font = qt.QFont()
-        self.font.setPixelSize(15) 
-        self.MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
-        self.MarkupsCollapsibleButton.text = "Fiducial point"
-        self.layout.addWidget(self.MarkupsCollapsibleButton)
-        
-
-        # BUTTON
-        self.mAdd = qt.QPushButton("Add")
-        self.mDelete = qt.QPushButton("Delete")
-        self.mSwitch = PyToogle()
-        
-        # SPIN BOX
-        self.mX = qt.QDoubleSpinBox()
-        self.mX.setMaximum(2000) 
-        self.mY = qt.QDoubleSpinBox()
-        self.mY.setMaximum(2000) 
-        self.mZ = qt.QDoubleSpinBox()
-        self.mZ.setMaximum(2000) 
-        # COMBO BOX
-        self.mMarkupid = qt.QComboBox()
-        self.mMarkupid.addItem("markup1")
-        
-        
-        # LABEL
-        self.mLabelDelete = qt.QLabel()
-        self.mLabelSwitch = qt.QLabel("Activate Markups")
-        self.mLabelSwitch.setFont(self.font)
-        self.mLabelEdit = qt.QLabel("Edition Markups")
-        self.mid = qt.QLabel("Markup")
-        self.mLabelEdit.setFont(self.font)
-        self.mXLabel = qt.QLabel("X Coordenate")
-        self.mYLabel = qt.QLabel("Y Coordenate")
-        self.mZLabel = qt.QLabel("Z Coordenate")
-        AddDeleteButton = qt.QGridLayout()
-        AddDeleteButton.addWidget(self.mAdd, 0, 0)
-        AddDeleteButton.addWidget(self.mDelete, 0, 1)
-     
-        # LAYOUT
-        MarkupLayout = qt.QFormLayout(self.MarkupsCollapsibleButton)
-        MarkupLayout.addRow(self.mLabelSwitch, self.mSwitch)
-        MarkupLayout.addRow(self.mLabelEdit)
-        MarkupLayout.addRow(self.mid, self.mMarkupid)
-        MarkupLayout.addRow(self.mXLabel, self.mX)
-        MarkupLayout.addRow(self.mYLabel, self.mY)
-        MarkupLayout.addRow(self.mZLabel, self.mZ)
-        MarkupLayout.addRow(AddDeleteButton)
-        MarkupLayout.setFormAlignment(qt.Qt.AlignCenter)
-
-        # APPLY BUTTONS
-        self.mSwitch.stateChanged.connect(self.debug)
+        self.Markup = MarckupClass(self.layout)
+        self.Markup.setupMarkup()
         
 
     def onReload(self):
@@ -270,26 +200,135 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         # Print a clearly visible separator to make it easier
         # to distinguish new error messages (during/after reload)
         # from old ones.
+
         print('\n' * 2)
         print('-' * 30)
         print('Reloading module: ' + self.moduleName)
         print('-' * 30)
         print('\n' * 2)
-
         slicer.util.reloadScriptedModule(self.moduleName)
+        if slicer.mrmlScene:
+         slicer.mrmlScene.RemoveNode(self.Markup.tnode)
+                    
 
-class MarckupClass():
-    pass  
+class MarckupClass(fist_InterfaceWidget):
+    def __init__(self, layout): 
+        self.layout = layout
+        
+        self.tnode = slicer.vtkMRMLMarkupsFiducialNode()
+        slicer.mrmlScene.AddNode(self.tnode)
+        self.tnode.SetName("fiducial out")
+        self.tnode.GetDisplayNode().SetSelectedColor(1,1,0)
+        self.tnode.AddControlPointWorld(50, 0, 0)
+        self.tnode.AddControlPointWorld(0, 50, 0)
+        self.tnode.AddControlPointWorld(0, 0, 50)
+        self.tnode.GetDisplayNode().SetVisibility(False)
+        self.MarkupList = ["fiducial_1", "fiducial_2", "fiducial_3"]
+        
+    def ResponseSwitch(self):        
+        if self.mSwitch.isChecked():  
+            self.tnode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
+                
+        else:
+            self.tnode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
+    
+    def EditMarkup(self, action, id=0):
+        if action == "Add":
+            self.tnode.AddControlPointWorld(0, 0, 0)
+            newMarkup = f"fiducial_{self.mMarkupid.count+1}"
+            self.mMarkupid.addItem(newMarkup)
+            self.mMarkupid.setCurrentIndex(self.mMarkupid.count-1)
 
+        if action == "Delete":
+            self.mMarkupid.removeItem(id)
+            self.tnode.RemoveNthControlPoint(id)
+            
+
+        
+        if action == "Apply":
+           # print(self.tnode.GetNthControlPointPosition(id))
+            self.mMarkupid.currentIndex
+            self.tnode.SetNthControlPointPosition(id, self.coordX.value, self.coordY.value, self.coordZ.value)
+            self.coordX.cleanText
+  
+        
+    def setupMarkup(self):
+    # MARKUP AREA
+        self.MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
+        self.MarkupsCollapsibleButton.text = "Fiducial point"
+        self.layout.addWidget(self.MarkupsCollapsibleButton)
+        self.font = qt.QFont()
+        self.font.setPixelSize(15)         
+
+    # BUTTON
+        self.mAdd = qt.QPushButton("Add")
+        self.mDelete = qt.QPushButton("Delete")
+        self.mApply = qt.QPushButton("Apply")
+        self.mSwitch = PyToogle()
+        
+    # SPIN BOX
+        self.coordX = qt.QDoubleSpinBox()
+        self.coordX.setMaximum(2000)
+        self.coordX.setMinimum(-2000) 
+        self.coordY = qt.QDoubleSpinBox()
+        self.coordY.setMaximum(2000) 
+        self.coordY.setMinimum(-2000) 
+        self.coordZ = qt.QDoubleSpinBox()
+        self.coordZ.setMaximum(2000)
+        self.coordZ.setMinimum(-2000)  
+        
+    # COMBO BOX
+        
+        self.mMarkupid = qt.QComboBox()
+        self.mMarkupid.addItems(self.MarkupList)
+
+        
+    # LABEL
+        self.mLabelDelete = qt.QLabel()
+        self.mLabelSwitch = qt.QLabel("Activate Markups")
+        self.mLabelSwitch.setFont(self.font)
+        self.mLabelEdit = qt.QLabel("Edition Markups")
+        self.mid = qt.QLabel("Markup")
+        self.mLabelEdit.setFont(self.font)
+        self.coordXLabel = qt.QLabel("X Coordenate")
+        self.coordYLabel = qt.QLabel("Y Coordenate")
+        self.coordZLabel = qt.QLabel("Z Coordenate")
+        
+
+     
+    # LAYOUT
+        AddDeleteButton = qt.QGridLayout()
+        AddDeleteButton.addWidget(self.mAdd, 0, 0)
+        AddDeleteButton.addWidget(self.mDelete, 0, 1)
+        AddDeleteButton.addWidget(self.mApply, 0, 2)
+
+        MarkupLayout = qt.QFormLayout(self.MarkupsCollapsibleButton)
+        MarkupLayout.addRow(self.mLabelSwitch, self.mSwitch)
+        MarkupLayout.addRow(self.mLabelEdit)
+        MarkupLayout.addRow(self.mid, self.mMarkupid)
+        MarkupLayout.addRow(self.coordXLabel, self.coordX)
+        MarkupLayout.addRow(self.coordYLabel, self.coordY)
+        MarkupLayout.addRow(self.coordZLabel, self.coordZ)
+        MarkupLayout.addRow(AddDeleteButton)
+        MarkupLayout.setFormAlignment(qt.Qt.AlignCenter)
+        
+    # APPLY BUTTONS
+        self.mSwitch.stateChanged.connect(self.ResponseSwitch)
+        self.mAdd.connect('clicked()',lambda:  self.EditMarkup("Add"))
+        self.mDelete.connect('clicked()',lambda:  self.EditMarkup("Delete", self.mMarkupid.currentIndex))
+        self.mApply.connect('clicked()',lambda: self.EditMarkup("Apply", self.mMarkupid.currentIndex))   
+        
+    # APPLY COMBO BOX
+        
 class PyToogle(qt.QCheckBox):
     
  
 
-    def __init__(self, width = 60,  bg_color = '#777', circle_color = '#C4C4C4', active_color = '#0B8C05'):
+    def __init__(self, width = 40,  bg_color = '#777', circle_color = '#C4C4C4', active_color = '#0B8C05'):
         qt.QCheckBox.__init__(self)
 
         # Set default parameters
-        self.setFixedSize(width, 28)
+        self.setFixedSize(width, 22)
         self.setCursor(qt.Qt.PointingHandCursor)
         
         # Colors 
@@ -314,26 +353,26 @@ class PyToogle(qt.QCheckBox):
         painter.setPen(qt.Qt.NoPen)
 
         # DRAW RECTANGLE
-        rect = qt.QRect(0, 0, 100, 100)
+        rect = qt.QRect(0, 0, self.width, self.height)
 
         #CHECK IF IS CHECKED
         if not self.isChecked():
             # DRAW BG
             painter.setBrush(qt.QColor(self._bg_color))
-            painter.drawRoundedRect(1,5, 35, 18, 9, 21)
+            painter.drawRoundedRect(0,0, rect.width(), self.height, self.height/2, 11)
 
             # DRAW CIRCLE 
             painter.setBrush(qt.QColor(self._circle_color))
-            painter.drawEllipse(0, 5, 18, 18)
+            painter.drawEllipse(2, 2, 18, 18)
 
         else:
             # DRAW BG
             painter.setBrush(qt.QColor(self._active_color))
-            painter.drawRoundedRect(1, 5, 35, 18, 9, 21)
+            painter.drawRoundedRect(0, 0, rect.width(), self.height, self.height/2, 11)
 
             # DRAW CIRCLE 
             painter.setBrush(qt.QColor(self._circle_color))
-            painter.drawEllipse(20, 5, 18, 18)
+            painter.drawEllipse(self.width - 20, 2, 18, 18)
 
         # END DRAW
         painter.end()
