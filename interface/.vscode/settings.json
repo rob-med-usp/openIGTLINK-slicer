@@ -1,0 +1,21 @@
+{
+    "python.pipenvPath": "/Slicer-5.0.3-linux-amd64/bin/PythonSlicer",
+    "python.autoComplete.extraPaths": [
+        "/Slicer-5.0.3-linux-amd64/bin/Python",
+        "/Slicer-5.0.3-linux-amd64/bin/",
+        "/Slicer-5.0.3-linux-amd64/lib/python3.9/site-packages/vtkmodules",
+        "/Slicer-5.0.3-linux-amd64/lib/python3.9/site-packages",
+        "/Slicer-5.0.3-linux-amd64/lib/Slicer-5.0/qt-scripted-modules",
+        "/Slicer-5.0.3-linux-amd64/lib/Slicer-5.0",
+        "/Slicer-5.0.3-linux-amd64/lib/QtPlugins",
+        "/Slicer-5.0.3-linux-amd64/lib"],
+    "python.analysis.extraPaths": [
+        "/Slicer-5.0.3-linux-amd64/bin/Python",
+        "/Slicer-5.0.3-linux-amd64/bin/",
+        "/Slicer-5.0.3-linux-amd64/lib/python3.9/site-packages/vtkmodules",
+        "/Slicer-5.0.3-linux-amd64/lib/python3.9/site-packages",
+        "/Slicer-5.0.3-linux-amd64/lib/Slicer-5.0/qt-scripted-modules",
+        "/Slicer-5.0.3-linux-amd64/lib/Slicer-5.0",
+        "/Slicer-5.0.3-linux-amd64/lib/QtPlugins",
+        "/Slicer-5.0.3-linux-amd64/lib"]
+}
