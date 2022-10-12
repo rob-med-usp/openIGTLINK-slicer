@@ -71,19 +71,30 @@ class Registration:
     def robot_read(self):
         # para fins de testes, simularei as coordenadas do robo
 
-        add = 5.0
-        for i in range(self.n ): # setando para os 4 pontos do robo
-            self.r_points[i][0] = float(self.s_points[i][0]) + add # setando x
-            self.r_points[i][1] = float(self.s_points[i][1]) + add # y
-            self.r_points[i][2] = float(self.s_points[i][2]) + add # z
+        # add = 5.0
+        # for i in range(self.n ): # setando para os 4 pontos do robo
+        #     self.r_points[i][0] = float(self.s_points[i][0]) + add # setando x
+        #     self.r_points[i][1] = float(self.s_points[i][1]) + add # y
+        #     self.r_points[i][2] = float(self.s_points[i][2]) + add # z
 
-        print(self.r_points)
+        # print(self.r_points)
+        self.r_points[0][0] = 661.40
+        self.r_points[0][1] = -42.48
+        self.r_points[0][2] = 87.48
+        self.r_points[1][0] = 667.31
+        self.r_points[1][1] = 113.58
+        self.r_points[1][2] = 76.04
+        self.r_points[2][0] = 727.84
+        self.r_points[2][1] = 30.17
+        self.r_points[2][2] = 123.83
         
+
+
         return True
 
 def main():
 
-    registration = Registration(4)
+    registration = Registration(3)
     print(f"operaçao retornou {registration.slicer_read()}")
 
 
