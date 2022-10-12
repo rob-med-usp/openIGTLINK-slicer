@@ -121,6 +121,8 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
             self.parent.show()
         slicer.app.moduleManager().connect(
             'moduleAboutToBeUnloaded(QString)', self._onModuleAboutToBeUnloaded)
+        self.browserWidget = qt.QWidget()
+        self.browserWidget.setWindowTitle('TCIA Browser')
         
         
     def resourcePath(self, filename):
@@ -182,8 +184,6 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         self.restartButton.connect('clicked()', slicer.app.restart)
         reloadFormLayout.addRow(self.createHLayout([self.reloadButton, self.reloadAndTestButton, self.restartButton]))
 
-   
-   
     def setup(self):
         # Instantiate and connect default widgets ...
         self.setupDeveloperSection()
@@ -191,6 +191,7 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         self.Markup = MarckupClass(self.layout)
         self.Markup.setupMarkup()
         
+
 
     def onReload(self):
         """
@@ -216,6 +217,7 @@ class MarckupClass(fist_InterfaceWidget):
         self.layout = layout
         
         self.tnode = slicer.vtkMRMLMarkupsFiducialNode()
+
         slicer.mrmlScene.AddNode(self.tnode)
         self.tnode.SetName("fiducial out")
         self.tnode.GetDisplayNode().SetSelectedColor(1,1,0)
@@ -225,6 +227,29 @@ class MarckupClass(fist_InterfaceWidget):
         self.tnode.GetDisplayNode().SetVisibility(False)
         self.MarkupList = ["fiducial_1", "fiducial_2", "fiducial_3"]
         
+
+    def onMarkupChanged(self, caller, event):
+        markupsNode = caller
+        sliceView = markupsNode.GetAttribute("Markups.MovingInSliceView")
+        movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
+        if movingMarkupIndex >= 0:
+            pos = [0,0,0]
+            markupsNode.GetNthControlPointPosition(movingMarkupIndex, pos)
+            isPreview = markupsNode.GetNthControlPointPositionStatus(movingMarkupIndex) == slicer.vtkMRMLMarkupsNode.PositionPreview
+            if isPreview:
+                logging.info("Point {0} is previewed at {1} in slice view {2}".format(movingMarkupIndex, pos, sliceView))
+            
+            else:
+                self.mMarkupid.setCurrentIndex(movingMarkupIndex)
+                self.coordX.setValue(pos[0])
+                self.coordY.setValue(pos[1])
+                self.coordZ.setValue(pos[2]) 
+                
+        else:
+            logging.info("Points modified: slice view = {0}".format(sliceView))
+
+        
+
     def ResponseSwitch(self):        
         if self.mSwitch.isChecked():  
             self.tnode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
@@ -237,25 +262,25 @@ class MarckupClass(fist_InterfaceWidget):
             self.tnode.AddControlPointWorld(0, 0, 0)
             newMarkup = f"fiducial_{self.mMarkupid.count+1}"
             self.mMarkupid.addItem(newMarkup)
-            self.mMarkupid.setCurrentIndex(self.mMarkupid.count-1)
-            self.coordX.clear()
-            self.coordY.clear()
-            self.coordZ.clear()
+            self.mMarkupid.setCurrentIndex(id)
+            #self.selectionchange(id)
 
         if action == "Delete":
             self.mMarkupid.removeItem(id)
             self.tnode.RemoveNthControlPoint(id)
-            self.coordX.clear()
-            self.coordY.clear()
-            self.coordZ.clear()
+            self.selectionchange(id)
 
         if action == "Apply":
-           # print(self.tnode.GetNthControlPointPosition(id))
-            self.mMarkupid.currentIndex
             self.tnode.SetNthControlPointPosition(id, self.coordX.value, self.coordY.value, self.coordZ.value)
-            
   
-        
+    def selectionchange(self, id=0):
+            pose = self.tnode.GetNthControlPointPosition(id)
+            self.coordX.setValue(pose[0])
+            self.coordY.setValue(pose[1])
+            self.coordZ.setValue(pose[2])
+            self.tnode.AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent, self.onMarkupChanged)
+               
+    
     def setupMarkup(self):
     # MARKUP AREA
         self.MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
@@ -264,28 +289,35 @@ class MarckupClass(fist_InterfaceWidget):
         self.font = qt.QFont()
         self.font.setPixelSize(15)         
 
-    # BUTTON
+    # BUTTONmApply
         self.mAdd = qt.QPushButton("Add")
         self.mDelete = qt.QPushButton("Delete")
         self.mApply = qt.QPushButton("Apply")
         self.mSwitch = PyToogle()
         
     # SPIN BOX
+        
         self.coordX = qt.QDoubleSpinBox()
         self.coordX.setMaximum(2000)
+        self.coordX.setDecimals(3)
         self.coordX.setMinimum(-2000) 
+
         self.coordY = qt.QDoubleSpinBox()
         self.coordY.setMaximum(2000) 
         self.coordY.setMinimum(-2000) 
+        self.coordY.setDecimals(3)
+        
         self.coordZ = qt.QDoubleSpinBox()
         self.coordZ.setMaximum(2000)
-        self.coordZ.setMinimum(-2000)  
+        self.coordZ.setMinimum(-2000)
+        self.coordZ.setDecimals(3) 
+        
         
     # COMBO BOX
         
         self.mMarkupid = qt.QComboBox()
         self.mMarkupid.addItems(self.MarkupList)
-
+        self.mMarkupid.currentIndexChanged.connect(lambda: self.selectionchange(self.mMarkupid.currentIndex))
         
     # LABEL
         self.mLabelDelete = qt.QLabel()
@@ -318,16 +350,13 @@ class MarckupClass(fist_InterfaceWidget):
         
     # APPLY BUTTONS
         self.mSwitch.stateChanged.connect(self.ResponseSwitch)
-        self.mAdd.connect('clicked()',lambda:  self.EditMarkup("Add"))
+        self.mAdd.connect('clicked()',lambda:  self.EditMarkup("Add", self.mMarkupid.count))
         self.mDelete.connect('clicked()',lambda:  self.EditMarkup("Delete", self.mMarkupid.currentIndex))
         self.mApply.connect('clicked()',lambda: self.EditMarkup("Apply", self.mMarkupid.currentIndex))   
-        
+        self.selectionchange()
     # APPLY COMBO BOX
         
 class PyToogle(qt.QCheckBox):
-    
- 
-
     def __init__(self, width = 40,  bg_color = '#777', circle_color = '#C4C4C4', active_color = '#0B8C05'):
         qt.QCheckBox.__init__(self)
 
@@ -506,3 +535,4 @@ class fist_InterfaceTest(ScriptedLoadableModuleTest):
         self.assertEqual(outputScalarRange[1], inputScalarRange[1])
 
         self.delayDisplay('Test passed')
+
