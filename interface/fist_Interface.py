@@ -145,16 +145,8 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         if moduleName == self.moduleName:
             self.cleanup()
             slicer.app.moduleManager().disconnect(
-                'moduleAboutToBeUnloaded(QString)', self._onModuleAboutToBeUnloaded)
-
+                'moduleAboutToBeUnloaded(QString)', self._onModuleAboutToBeUnloaded)     
     
-    def createHLayout(self, elements):
-        rowLayout = qt.QHBoxLayout()
-        for element in elements:
-            rowLayout.addWidget(element, qt.Qt.AlignCenter, qt.Qt.AlignCenter)
-        return rowLayout
-        
-
     def setupDeveloperSection(self):
         if not self.developerMode:
             return
@@ -162,7 +154,7 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         self.reloadCollapsibleButton = ctk.ctkCollapsibleButton()
         self.reloadCollapsibleButton.text = "Reload && Test"
         self.layout.addWidget(self.reloadCollapsibleButton)
-        reloadFormLayout = qt.QFormLayout(self.reloadCollapsibleButton)
+        reloadFormLayout = qt.QHBoxLayout(self.reloadCollapsibleButton)
 
         # reload button
         self.reloadButton = qt.QPushButton("Reload")
@@ -174,15 +166,15 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         self.reloadAndTestButton = qt.QPushButton("Reload and Test")
         self.reloadAndTestButton.toolTip = "Reload this module and then run the self tests."
         self.reloadAndTestButton.connect('clicked()', self.onReloadAndTest)
-        
-        # restart Slicer button
-        # (use this during development, but remove it when delivering
-        #  your module to users)
+
         self.restartButton = qt.QPushButton("Restart Slicer")
         self.restartButton.toolTip = "Restart Slicer"
         self.restartButton.name = "ScriptedLoadableModuleTemplate Restart"
         self.restartButton.connect('clicked()', slicer.app.restart)
-        reloadFormLayout.addRow(self.createHLayout([self.reloadButton, self.reloadAndTestButton, self.restartButton]))
+        elements = [self.reloadButton, self.reloadAndTestButton, self.restartButton]
+        for element in elements:
+                reloadFormLayout.addWidget(element)
+    
 
     def setup(self):
         # Instantiate and connect default widgets ...
@@ -191,17 +183,7 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         self.Markup = MarckupClass(self.layout)
         self.Markup.setupMarkup()
         
-
-
     def onReload(self):
-        """
-        Reload scripted module widget representation.
-        """
-
-        # Print a clearly visible separator to make it easier
-        # to distinguish new error messages (during/after reload)
-        # from old ones.
-
         print('\n' * 2)
         print('-' * 30)
         print('Reloading module: ' + self.moduleName)
@@ -209,15 +191,14 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         print('\n' * 2)
         slicer.util.reloadScriptedModule(self.moduleName)
         if slicer.mrmlScene:
-         slicer.mrmlScene.RemoveNode(self.Markup.tnode)
-                    
+            slicer.mrmlScene.RemoveNode(self.Markup.tnode)
+            slicer.mrmlScene.RemoveNode(self.Markup.IGTNode)
 
 class MarckupClass(fist_InterfaceWidget):
     def __init__(self, layout): 
         self.layout = layout
-        
-        self.tnode = slicer.vtkMRMLMarkupsFiducialNode()
 
+        self.tnode = slicer.vtkMRMLMarkupsFiducialNode()
         slicer.mrmlScene.AddNode(self.tnode)
         self.tnode.SetName("fiducial out")
         self.tnode.GetDisplayNode().SetSelectedColor(1,1,0)
@@ -230,73 +211,116 @@ class MarckupClass(fist_InterfaceWidget):
 
     def onMarkupChanged(self, caller, event):
         markupsNode = caller
+        
+        id1 = self.mMarkupid.count
         sliceView = markupsNode.GetAttribute("Markups.MovingInSliceView")
         movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
         if movingMarkupIndex >= 0:
             pos = [0,0,0]
             markupsNode.GetNthControlPointPosition(movingMarkupIndex, pos)
-            isPreview = markupsNode.GetNthControlPointPositionStatus(movingMarkupIndex) == slicer.vtkMRMLMarkupsNode.PositionPreview
-            if isPreview:
-                logging.info("Point {0} is previewed at {1} in slice view {2}".format(movingMarkupIndex, pos, sliceView))
-            
-            else:
+           # isPreview = markupsNode.GetNthControlPointPositionStatus(movingMarkupIndex) == slicer.vtkMRMLMarkupsNode.PositionPreview
+           
+            if movingMarkupIndex != self.mMarkupid.count:
                 self.mMarkupid.setCurrentIndex(movingMarkupIndex)
                 self.coordX.setValue(pos[0])
                 self.coordY.setValue(pos[1])
                 self.coordZ.setValue(pos[2]) 
-                
-        else:
-            logging.info("Points modified: slice view = {0}".format(sliceView))
-
+    
+    def AddNewMarkup(self, caller, event):
+        markupsNode = caller
+        sliceView = markupsNode.GetAttribute("Markups.PointPositionDefinedEvent")
+        movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
+        addingMarkup = slicer.vtkMRMLMarkupsNode.PointPositionDefinedEvent.__bool__()
         
+        if addingMarkup:
+            newMarkup = f"fiducial_{movingMarkupIndex+1}"
+            self.mMarkupid.addItem(newMarkup)
+            self.mMarkupid.setCurrentIndex(movingMarkupIndex)
+            
 
     def ResponseSwitch(self):        
         if self.mSwitch.isChecked():  
             self.tnode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
-                
         else:
             self.tnode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
+
+        if self.IGTSwitch.isChecked():
+            self.IGTNode.Start()
+       
+        else:
+            self.IGTNode.Stop()
     
     def EditMarkup(self, action, id=0):
         if action == "Add":
-            self.tnode.AddControlPointWorld(0, 0, 0)
-            newMarkup = f"fiducial_{self.mMarkupid.count+1}"
-            self.mMarkupid.addItem(newMarkup)
-            self.mMarkupid.setCurrentIndex(id)
-            #self.selectionchange(id)
-
+            # self.tnode.AddControlPointWorld(0, 0, 0)
+            # newMarkup = f"fiducial_{self.mMarkupid.count+1}"
+            # self.mMarkupid.addItem(newMarkup)
+            # self.mMarkupid.setCurrentIndex(id)
+            self.selectionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLSelectionNodeSingleton")
+            self.selectionNode.SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsFiducialNode")
+            self.interactionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton")
+            placeModePersistence = 1
+            self.interactionNode.SetPlaceModePersistence(placeModePersistence)
+           # mode 1 is Place, can also be accessed via slicer.vtkMRMLInteractionNode().Place
+            self.interactionNode.SetCurrentInteractionMode(1)
+            self.tnode.AddObserver(slicer.vtkMRMLMarkupsNode.PointPositionDefinedEvent, self.AddNewMarkup)
+            
         if action == "Delete":
             self.mMarkupid.removeItem(id)
             self.tnode.RemoveNthControlPoint(id)
-            self.selectionchange(id)
+            self.selectionchange()
 
         if action == "Apply":
+            self.interactionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton")
+            self.interactionNode.SwitchToViewTransformMode()
+            # also turn off place mode persistence if required
+            self.interactionNode.SetPlaceModePersistence(0)
+            self.mMarkupid.setCurrentIndex(id)
             self.tnode.SetNthControlPointPosition(id, self.coordX.value, self.coordY.value, self.coordZ.value)
   
-    def selectionchange(self, id=0):
-            pose = self.tnode.GetNthControlPointPosition(id)
+    def selectionchange(self):
+            pose = self.tnode.GetNthControlPointPosition(self.mMarkupid.currentIndex)
             self.coordX.setValue(pose[0])
             self.coordY.setValue(pose[1])
             self.coordZ.setValue(pose[2])
             self.tnode.AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent, self.onMarkupChanged)
                
-    
+   
     def setupMarkup(self):
+    # FONT
+        self.font = qt.QFont()
+        self.font.setPixelSize(15) 
+        #self.interactionNode.SetPlaceModePersistence(0)
+    # IGT AREA
+
+        self.IGTCollapsibleButton = ctk.ctkCollapsibleButton()
+        self.IGTCollapsibleButton.text = "IGT connection"
+        self.layout.addWidget(self.IGTCollapsibleButton)
+        IGTLayout = qt.QFormLayout(self.IGTCollapsibleButton)
+        self.IGTLabelSwitch = qt.QLabel("IGT connection")
+        self.IGTLabelSwitch.setFont(self.font)
+        self.IGTSwitch = PyToogle()
+        IGTLayout.addRow(self.IGTLabelSwitch, self.IGTSwitch)
+        self.IGTSwitch.stateChanged.connect(self.ResponseSwitch)
+        self.IGTNode = slicer.vtkMRMLIGTLConnectorNode()
+        self.IGTNode.SetName('IGT Connector')
+        slicer.mrmlScene.AddNode(self.IGTNode)
+        self.IGTNode.SetTypeServer(18944)
+        self.IGTNode.SetTypeClient('localhost', 18944)
+    
     # MARKUP AREA
         self.MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
         self.MarkupsCollapsibleButton.text = "Fiducial point"
         self.layout.addWidget(self.MarkupsCollapsibleButton)
-        self.font = qt.QFont()
-        self.font.setPixelSize(15)         
+                
 
-    # BUTTONmApply
+    # BUTTON
         self.mAdd = qt.QPushButton("Add")
         self.mDelete = qt.QPushButton("Delete")
         self.mApply = qt.QPushButton("Apply")
         self.mSwitch = PyToogle()
         
     # SPIN BOX
-        
         self.coordX = qt.QDoubleSpinBox()
         self.coordX.setMaximum(2000)
         self.coordX.setDecimals(3)
@@ -314,10 +338,9 @@ class MarckupClass(fist_InterfaceWidget):
         
         
     # COMBO BOX
-        
         self.mMarkupid = qt.QComboBox()
         self.mMarkupid.addItems(self.MarkupList)
-        self.mMarkupid.currentIndexChanged.connect(lambda: self.selectionchange(self.mMarkupid.currentIndex))
+        self.mMarkupid.currentIndexChanged.connect(self.selectionchange)
         
     # LABEL
         self.mLabelDelete = qt.QLabel()
@@ -337,7 +360,6 @@ class MarckupClass(fist_InterfaceWidget):
         AddDeleteButton.addWidget(self.mAdd, 0, 0)
         AddDeleteButton.addWidget(self.mDelete, 0, 1)
         AddDeleteButton.addWidget(self.mApply, 0, 2)
-
         MarkupLayout = qt.QFormLayout(self.MarkupsCollapsibleButton)
         MarkupLayout.addRow(self.mLabelSwitch, self.mSwitch)
         MarkupLayout.addRow(self.mLabelEdit)
@@ -352,9 +374,12 @@ class MarckupClass(fist_InterfaceWidget):
         self.mSwitch.stateChanged.connect(self.ResponseSwitch)
         self.mAdd.connect('clicked()',lambda:  self.EditMarkup("Add", self.mMarkupid.count))
         self.mDelete.connect('clicked()',lambda:  self.EditMarkup("Delete", self.mMarkupid.currentIndex))
-        self.mApply.connect('clicked()',lambda: self.EditMarkup("Apply", self.mMarkupid.currentIndex))   
-        self.selectionchange()
+        self.mApply.connect('clicked()',lambda: self.EditMarkup("Apply", self.mMarkupid.count-1))   
+   
     # APPLY COMBO BOX
+        self.selectionchange()
+        self.interactionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton")
+        self.interactionNode.SetCurrentInteractionMode(0)
         
 class PyToogle(qt.QCheckBox):
     def __init__(self, width = 40,  bg_color = '#777', circle_color = '#C4C4C4', active_color = '#0B8C05'):
