@@ -180,7 +180,7 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         # Instantiate and connect default widgets ...
         self.setupDeveloperSection()
 
-        self.Markup = MarckupClass(self.layout)
+        self.Markup = MarkupClass(self.layout)
         self.Markup.setupMarkup()
         
     def onReload(self):
@@ -189,60 +189,57 @@ class fist_InterfaceWidget(ScriptedLoadableModuleWidget):
         print('Reloading module: ' + self.moduleName)
         print('-' * 30)
         print('\n' * 2)
-        slicer.util.reloadScriptedModule(self.moduleName)
-        if slicer.mrmlScene:
-            slicer.mrmlScene.RemoveNode(self.Markup.tnode)
-            slicer.mrmlScene.RemoveNode(self.Markup.IGTNode)
+        slicer.mrmlScene.Clear()
 
-class MarckupClass(fist_InterfaceWidget):
+class MarkupClass(fist_InterfaceWidget):
     def __init__(self, layout): 
         self.layout = layout
-
-        self.tnode = slicer.vtkMRMLMarkupsFiducialNode()
-        slicer.mrmlScene.AddNode(self.tnode)
-        self.tnode.SetName("fiducial out")
-        self.tnode.GetDisplayNode().SetSelectedColor(1,1,0)
-        self.tnode.AddControlPointWorld(50, 0, 0)
-        self.tnode.AddControlPointWorld(0, 50, 0)
-        self.tnode.AddControlPointWorld(0, 0, 50)
-        self.tnode.GetDisplayNode().SetVisibility(False)
+        self.fiducialNode = slicer.vtkMRMLMarkupsFiducialNode()
+        slicer.mrmlScene.AddNode(self.fiducialNode)
+        self.fiducialNode.SetName("fiducial out")
+        self.fiducialNode.GetDisplayNode().SetSelectedColor(1,1,0)
+        self.fiducialNode.AddControlPointWorld(50, 0, 0)
+        self.fiducialNode.AddControlPointWorld(0, 50, 0)
+        self.fiducialNode.AddControlPointWorld(0, 0, 50)
+        self.fiducialNode.GetDisplayNode().SetVisibility(False)
         self.MarkupList = ["fiducial_1", "fiducial_2", "fiducial_3"]
         
 
     def onMarkupChanged(self, caller, event):
         markupsNode = caller
-        
         id1 = self.mMarkupid.count
         sliceView = markupsNode.GetAttribute("Markups.MovingInSliceView")
         movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
         if movingMarkupIndex >= 0:
             pos = [0,0,0]
             markupsNode.GetNthControlPointPosition(movingMarkupIndex, pos)
-           # isPreview = markupsNode.GetNthControlPointPositionStatus(movingMarkupIndex) == slicer.vtkMRMLMarkupsNode.PositionPreview
-           
+        
             if movingMarkupIndex != self.mMarkupid.count:
                 self.mMarkupid.setCurrentIndex(movingMarkupIndex)
                 self.coordX.setValue(pos[0])
                 self.coordY.setValue(pos[1])
                 self.coordZ.setValue(pos[2]) 
+                self.selectionchange('Line')
     
     def AddNewMarkup(self, caller, event):
         markupsNode = caller
         sliceView = markupsNode.GetAttribute("Markups.PointPositionDefinedEvent")
         movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
         addingMarkup = slicer.vtkMRMLMarkupsNode.PointPositionDefinedEvent.__bool__()
-        
+        #print(addingMarkup)
         if addingMarkup:
             newMarkup = f"fiducial_{movingMarkupIndex+1}"
             self.mMarkupid.addItem(newMarkup)
+            self.FistPoint.addItem(newMarkup)
+            self.SecondPoint.addItem(newMarkup)
             self.mMarkupid.setCurrentIndex(movingMarkupIndex)
             
 
     def ResponseSwitch(self):        
         if self.mSwitch.isChecked():  
-            self.tnode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
+            self.fiducialNode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
         else:
-            self.tnode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
+            self.fiducialNode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
 
         if self.IGTSwitch.isChecked():
             self.IGTNode.Start()
@@ -252,73 +249,105 @@ class MarckupClass(fist_InterfaceWidget):
     
     def EditMarkup(self, action, id=0):
         if action == "Add":
-            # self.tnode.AddControlPointWorld(0, 0, 0)
-            # newMarkup = f"fiducial_{self.mMarkupid.count+1}"
-            # self.mMarkupid.addItem(newMarkup)
-            # self.mMarkupid.setCurrentIndex(id)
             self.selectionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLSelectionNodeSingleton")
             self.selectionNode.SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsFiducialNode")
             self.interactionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton")
             placeModePersistence = 1
             self.interactionNode.SetPlaceModePersistence(placeModePersistence)
-           # mode 1 is Place, can also be accessed via slicer.vtkMRMLInteractionNode().Place
             self.interactionNode.SetCurrentInteractionMode(1)
-            self.tnode.AddObserver(slicer.vtkMRMLMarkupsNode.PointPositionDefinedEvent, self.AddNewMarkup)
+            self.fiducialNode.AddObserver(slicer.vtkMRMLMarkupsNode.PointPositionDefinedEvent, self.AddNewMarkup)
+            
             
         if action == "Delete":
             self.mMarkupid.removeItem(id)
-            self.tnode.RemoveNthControlPoint(id)
-            self.selectionchange()
+            self.fiducialNode.RemoveNthControlPoint(id)
+            self.selectionchange('Points')
 
         if action == "Apply":
-            self.interactionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton")
+            #self.interactionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton")
             self.interactionNode.SwitchToViewTransformMode()
-            # also turn off place mode persistence if required
             self.interactionNode.SetPlaceModePersistence(0)
             self.mMarkupid.setCurrentIndex(id)
-            self.tnode.SetNthControlPointPosition(id, self.coordX.value, self.coordY.value, self.coordZ.value)
+            self.fiducialNode.SetNthControlPointPosition(id, self.coordX.value, self.coordY.value, self.coordZ.value)
   
-    def selectionchange(self):
-            pose = self.tnode.GetNthControlPointPosition(self.mMarkupid.currentIndex)
+    def selectionchange(self, type):
+        if type == 'Points':
+            pose = self.fiducialNode.GetNthControlPointPosition(self.mMarkupid.currentIndex)
             self.coordX.setValue(pose[0])
             self.coordY.setValue(pose[1])
             self.coordZ.setValue(pose[2])
-            self.tnode.AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent, self.onMarkupChanged)
-               
+            self.fiducialNode.AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent, self.onMarkupChanged)
+            #self.LineDictionary['Line1'].AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent, self.onMarkupChanged)
+
+        if type == 'Line':
+            FistPointPose = self.fiducialNode.GetNthControlPointPosition(self.FistPoint.currentIndex)
+            SecondPointPose  = self.fiducialNode.GetNthControlPointPosition(self.SecondPoint.currentIndex)
+            FinalPose = [0,0,0]
+            for i in range(len(FistPointPose)):
+                FinalPose[i] = FistPointPose[i] - SecondPointPose[i]
+            Final = np.power(FinalPose, 2)
+            Distance = np.sqrt(Final[0]+Final[1]+Final[2])
+            self.ShowDistance.setText(f"{np.round(Distance, 3)}")
    
     def setupMarkup(self):
+    
+    # TESTE 
+        self.fiducialCBox = slicer.qMRMLNodeComboBox()
+        # MUITO IMPORTANTEEEEEEEEE!!!!!!!
+        self.fiducialCBox.nodeTypes = (("vtkMRMLMarkupsFiducialNode"), ("vtkMRMLMarkupsLineNode"))
+        self.fiducialCBox.selectNodeUponCreation = False
+        self.fiducialCBox.addEnabled = False
+        self.fiducialCBox.removeEnabled = False
+        self.fiducialCBox.noneEnabled = True
+        self.fiducialCBox.setMRMLScene(slicer.mrmlScene)
+        self.fiducialCBox.setToolTip("Select a fiducial list")
+
     # FONT
         self.font = qt.QFont()
         self.font.setPixelSize(15) 
-        #self.interactionNode.SetPlaceModePersistence(0)
+        
     # IGT AREA
-
         self.IGTCollapsibleButton = ctk.ctkCollapsibleButton()
         self.IGTCollapsibleButton.text = "IGT connection"
-        self.layout.addWidget(self.IGTCollapsibleButton)
-        IGTLayout = qt.QFormLayout(self.IGTCollapsibleButton)
-        self.IGTLabelSwitch = qt.QLabel("IGT connection")
-        self.IGTLabelSwitch.setFont(self.font)
-        self.IGTSwitch = PyToogle()
-        IGTLayout.addRow(self.IGTLabelSwitch, self.IGTSwitch)
-        self.IGTSwitch.stateChanged.connect(self.ResponseSwitch)
+
+    # NODE 
         self.IGTNode = slicer.vtkMRMLIGTLConnectorNode()
         self.IGTNode.SetName('IGT Connector')
         slicer.mrmlScene.AddNode(self.IGTNode)
         self.IGTNode.SetTypeServer(18944)
         self.IGTNode.SetTypeClient('localhost', 18944)
+
+    # LABEL
+        self.layout.addWidget(self.IGTCollapsibleButton)
+        IGTLayout = qt.QFormLayout(self.IGTCollapsibleButton)
+        self.IGTLabelSwitch = qt.QLabel("IGT connection")
+        self.IGTLabelSwitch.setFont(self.font)
+    
+    # BUTTON
+        self.IGTSwitch = PyToogle()
+        IGTLayout.addRow(self.IGTLabelSwitch, self.IGTSwitch)
+    
+    # CONNECTION
+        self.IGTSwitch.stateChanged.connect(self.ResponseSwitch)
+        
     
     # MARKUP AREA
         self.MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
         self.MarkupsCollapsibleButton.text = "Fiducial point"
         self.layout.addWidget(self.MarkupsCollapsibleButton)
-                
+        #self.layout.addSpacing(20)                
 
     # BUTTON
         self.mAdd = qt.QPushButton("Add")
         self.mDelete = qt.QPushButton("Delete")
         self.mApply = qt.QPushButton("Apply")
         self.mSwitch = PyToogle()
+
+        # BUTTONS LAYOUT
+        AddDeleteButton = qt.QGridLayout()
+        AddDeleteButton.addWidget(self.mAdd, 0, 0)
+        AddDeleteButton.addWidget(self.mDelete, 0, 1)
+        AddDeleteButton.addWidget(self.mApply, 0, 2)
         
     # SPIN BOX
         self.coordX = qt.QDoubleSpinBox()
@@ -335,15 +364,42 @@ class MarckupClass(fist_InterfaceWidget):
         self.coordZ.setMaximum(2000)
         self.coordZ.setMinimum(-2000)
         self.coordZ.setDecimals(3) 
+
+    # LINE SECTION 
+        # NODE
+        self.FistPoint = qt.QComboBox()
+        self.SecondPoint = qt.QComboBox()
+        self.FistPoint.addItems(self.MarkupList)
+        self.SecondPoint.addItems(self.MarkupList)
+        self.FistPoint.currentIndexChanged.connect(lambda: self.selectionchange('Line'))
+        self.SecondPoint.currentIndexChanged.connect(lambda: self.selectionchange('Line'))
+        
+        # TEXTBOX
+        self.ShowDistance = qt.QLineEdit()
+
+        # LABEL
+        self.LabelLine = qt.QLabel("Distance Point")
+        self.LabelLineInstructions = qt.QLabel('Select Points')
+        self.LabelLine.setFont(self.font)
+        self.Distance = qt.QLabel("Line Distance")
+
+        # LAYOUT
+        self.LineLayout = qt.QGridLayout()
+        self.LineLayout.addWidget(self.LabelLineInstructions, 0, 0)
+        self.LineLayout.addWidget(self.FistPoint, 0, 1)
+        self.LineLayout.addWidget(self.SecondPoint, 0, 2)
+        self.LineLayout.addWidget(self.Distance, 1, 0)
+        self.LineLayout.addWidget(self.ShowDistance, 1, 1, 1, 2)
         
         
+     
+      
     # COMBO BOX
         self.mMarkupid = qt.QComboBox()
         self.mMarkupid.addItems(self.MarkupList)
-        self.mMarkupid.currentIndexChanged.connect(self.selectionchange)
+        self.mMarkupid.currentIndexChanged.connect(lambda: self.selectionchange('Points'))
         
     # LABEL
-        self.mLabelDelete = qt.QLabel()
         self.mLabelSwitch = qt.QLabel("Activate Markups")
         self.mLabelSwitch.setFont(self.font)
         self.mLabelEdit = qt.QLabel("Edition Markups")
@@ -354,12 +410,7 @@ class MarckupClass(fist_InterfaceWidget):
         self.coordZLabel = qt.QLabel("Z Coordenate")
         
 
-     
     # LAYOUT
-        AddDeleteButton = qt.QGridLayout()
-        AddDeleteButton.addWidget(self.mAdd, 0, 0)
-        AddDeleteButton.addWidget(self.mDelete, 0, 1)
-        AddDeleteButton.addWidget(self.mApply, 0, 2)
         MarkupLayout = qt.QFormLayout(self.MarkupsCollapsibleButton)
         MarkupLayout.addRow(self.mLabelSwitch, self.mSwitch)
         MarkupLayout.addRow(self.mLabelEdit)
@@ -368,16 +419,20 @@ class MarckupClass(fist_InterfaceWidget):
         MarkupLayout.addRow(self.coordYLabel, self.coordY)
         MarkupLayout.addRow(self.coordZLabel, self.coordZ)
         MarkupLayout.addRow(AddDeleteButton)
+        MarkupLayout.addRow(self.LabelLine)
+        MarkupLayout.addRow(self.LineLayout)
+        MarkupLayout.addRow(self.fiducialCBox)
+        MarkupLayout.setVerticalSpacing(10)
         MarkupLayout.setFormAlignment(qt.Qt.AlignCenter)
         
     # APPLY BUTTONS
         self.mSwitch.stateChanged.connect(self.ResponseSwitch)
-        self.mAdd.connect('clicked()',lambda:  self.EditMarkup("Add", self.mMarkupid.count))
+        self.mAdd.connect('clicked()',lambda:  self.EditMarkup("Add"))
         self.mDelete.connect('clicked()',lambda:  self.EditMarkup("Delete", self.mMarkupid.currentIndex))
-        self.mApply.connect('clicked()',lambda: self.EditMarkup("Apply", self.mMarkupid.count-1))   
+        self.mApply.connect('clicked()',lambda: self.EditMarkup("Apply", self.mMarkupid.currentIndex))   
    
     # APPLY COMBO BOX
-        self.selectionchange()
+        self.selectionchange('Points')
         self.interactionNode = slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton")
         self.interactionNode.SetCurrentInteractionMode(0)
         
