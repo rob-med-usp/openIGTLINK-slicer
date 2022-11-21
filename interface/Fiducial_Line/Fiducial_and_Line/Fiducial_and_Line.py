@@ -230,61 +230,83 @@ class MarkupClass(Fiducial_and_LineWidget):
     def __init__(self, layout): 
         self.layout = layout
         self.Lines = []
-        self.number = 1
         self.NameLine = []
-        
-    def ResponseSwitch(self):        
-        # if self.mSwitch.isChecked():  
-        #     self.fiducialNode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
-        # else:
-        #     self.fiducialNode.GetDisplayNode().SetVisibility(self.mSwitch.isChecked())
+        self.confirm = False
 
+    def ResponseSwitch(self):        
         if self.IGTSwitch.isChecked():
             self.IGTNode.Start()
         
         else:
             self.IGTNode.Stop()
-
+                
     def selectionchange(self):
-        select = slicer.mrmlScene.GetNodeByID("vtkMRMLSelectionNodeSingleton")
-        self.id = self.SelectionNode.currentIndex
-        print(self.NameLine[self.id])
-        select.SetActivePlaceNodeID(slicer.util.getNode(self.NameLine[self.id]).GetID())
-        #self.node = self.Line[self.id]
+        if len(self.NameLine)>0:
+            select = slicer.mrmlScene.GetNodeByID("vtkMRMLSelectionNodeSingleton")
+            self.id = self.SelectionNode.currentIndex
+            select.SetActivePlaceNodeID(slicer.util.getNode(self.NameLine[self.id]).GetID())
+            if self.confirm:
+                self.node.Observer()
+            self.ResponseSwitchLine()
+        else:
+            self.id = self.SelectionNode.currentIndex
+            
+    def ResponseSwitchLine(self):
+        if self.SwitchLine.isChecked():
+            self.LabelLine.setText('Exclusive Line')
+            for idx in range(len(self.Lines)):
+                self.Lines[idx].ViewOff()
+            self.Lines[self.id].ViewOn()
+        else:
+            self.LabelLine.setText('All Lines')
+            for elements in self.Lines:
+                elements.ViewOn()
 
     def AddResponse(self):
         idx = len(self.Lines)
-        self.Lines.append(LineNode(f'Line{idx+1}', idx))
-        self.NameLine.append(f'Line{idx+1}')
+        self.confirm = True
+
+        if self.LineName.text != 'Line Name' and self.LineName.text != '':
+            name = self.LineName.text
+            self.Lines.append(LineNode(name, idx))
+            self.NameLine.append(name)
+            
+        
+        else:
+            self.Lines.append(LineNode(f'Line{idx+1}', idx))
+            self.NameLine.append(f'Line{idx+1}')
+        
         self.node = self.Lines[idx]
         self.node.Add()
-        
         self.SelectionNode.addItem(f'Line{idx+1}')
         self.SelectionNode.setCurrentIndex(idx)
 
     def ApplyResponse(self):
         self.node = self.Lines[self.id]
-        self.node.vectorLine()
-        self.node.ElectrodeContact()
+        self.node.Apply()
+        
         
     def DeleteResponse(self):
         self.node = self.Lines[self.id]
         self.node.DeleteNode()
-        self.Lines.remove(self.id)
+        del self.NameLine[self.id]
+        del self.Lines[self.id]
         self.SelectionNode.removeItem(self.id)
-        self.NameLine.remove(self.id)
-       
+    
 
     def setupMarkup(self):
-       
+    # FONT
+        font = qt.QFont()
+        font.setPixelSize(14) 
+
     # SELECTION NODE LINE
         self.SelectionNode = qt.QComboBox()
         self.SelectionNode.addItems(self.NameLine)
         self.SelectionNode.currentIndexChanged.connect(self.selectionchange)
-        
-    # FONT
-        self.font = qt.QFont()
-        self.font.setPixelSize(15) 
+        SelectionNodeLayout = qt.QFormLayout()
+        SelecLineLabel = qt.QLabel("Selection Line")
+        SelecLineLabel.setFont(font)
+        SelectionNodeLayout.addRow(SelecLineLabel, self.SelectionNode)
         
 ############################################################################################        
    
@@ -303,7 +325,7 @@ class MarkupClass(Fiducial_and_LineWidget):
         self.layout.addWidget(self.IGTCollapsibleButton)
         IGTLayout = qt.QFormLayout(self.IGTCollapsibleButton)
         self.IGTLabelSwitch = qt.QLabel("IGT connection")
-        self.IGTLabelSwitch.setFont(self.font)
+        self.IGTLabelSwitch.setFont(font)
     
     # BUTTON
         self.IGTSwitch = PyToogle()
@@ -314,53 +336,83 @@ class MarkupClass(Fiducial_and_LineWidget):
 
 ############################################################################################      
     # LINE AREA
-        self.MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
-        self.MarkupsCollapsibleButton.text = "Fiducial and Line"
-        self.layout.addWidget(self.MarkupsCollapsibleButton)
-    
-    # BUTTON 
-        self.Add = qt.QPushButton()
-        self.Add.setIcon(qt.QIcon(qt.QPixmap("/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/plus.png")))
-        self.Add.setIconSize(qt.QSize(30,30))
-        self.Delete = qt.QPushButton()
-        self.Delete.setIcon(qt.QIcon(qt.QPixmap("/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png")))
-        self.Delete.setIconSize(qt.QSize(30,30))
-        self.Apply = qt.QPushButton()
-        self.Apply.setIcon(qt.QIcon(qt.QPixmap("/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png")))
-        self.Apply.setIconSize(qt.QSize(30,30))
-        self.View = qt.QPushButton()
-        self.View.setIcon(qt.QIcon(qt.QPixmap("/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/view.png")))
-        self.View.setIconSize(qt.QSize(30,30))
 
-        AddDeleteButton = qt.QGridLayout()
-        AddDeleteButton.addWidget(self.Add, 0, 0)
-        AddDeleteButton.addWidget(self.Delete, 0, 1)
-        AddDeleteButton.addWidget(self.Apply, 0, 2)
-        AddDeleteButton.addWidget(self.View, 0, 3)
-    
+        MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
+        MarkupsCollapsibleButton.text = "Fiducial and Line"
+        self.layout.addWidget(MarkupsCollapsibleButton)
+        self.SwitchLine = PyToogle()
+        self.LabelLine = qt.QLabel("All Lines")
+        self.LabelLine.setFont(font)
+        SwitchLayout = qt.QGridLayout()
+        SwitchLayout.addWidget(self.LabelLine, 0, 0)
+        SwitchLayout.addWidget(self.SwitchLine, 0, 2)
+        self.SwitchLine.stateChanged.connect(self.ResponseSwitchLine)
 
-        self.Add.connect('clicked()', self.AddResponse)
-        self.Apply.connect('clicked()', self.ApplyResponse)
-        self.Delete.connect('clicked()', self.DeleteResponse)
+        self.LineName = qt.QLineEdit('Line Name')
+
+    # BUTTON CLASS
+    
+        ButtonsList = [Button('Add'), Button('Delete'), Button ('Apply')]
+
+        # BUTTON LAYOUT
+        AddDeleteButton = qt.QHBoxLayout()
+        AddDeleteButton.addWidget(ButtonsList[0])
+        AddDeleteButton.addWidget(ButtonsList[1])
+        AddDeleteButton.addWidget(ButtonsList[2])
+
+        # AddDeleteButton = qt.QGridLayout()
+        # AddDeleteButton.addWidget(ButtonsList[0],0,0)
+        # AddDeleteButton.addWidget(ButtonsList[1],0,1)
+        # AddDeleteButton.addWidget(ButtonsList[2],1,0)
         
-    # LABEL
-        self.SelecLineLabel = qt.QLabel("Selection Line")
-        
+        # BUTTON CONNECTION
+        ButtonsList[0].connect('clicked()', self.AddResponse)
+        ButtonsList[1].connect('clicked()', self.DeleteResponse)
+        ButtonsList[2].connect('clicked()', self.ApplyResponse)
+    
     # LAYOUT
-        MarkupLayout = qt.QFormLayout(self.MarkupsCollapsibleButton)
-        MarkupLayout.addRow(self.SelecLineLabel, self.SelectionNode)
-        MarkupLayout.addRow(AddDeleteButton)
-        MarkupLayout.setFormAlignment(qt.Qt.AlignCenter)
+        WidgetList = [SwitchLayout, SelectionNodeLayout, AddDeleteButton]
+        MarkupLayout = qt.QVBoxLayout(MarkupsCollapsibleButton)
+        for element in WidgetList:
+            MarkupLayout.addLayout(element)
         
 class LineNode():
     def __init__(self, name, id):
+    
+    # LINE MARKUPS
         self.Line = slicer.vtkMRMLMarkupsLineNode()
         slicer.mrmlScene.AddNode(self.Line)
         self.Line.SetName(f"{name}")
         self.Line.GetDisplayNode().SetVisibility(True)
-        #self.ContactPoint = slicer.vtkMRMLMarkupsFiducialNode()
-        self.Contacts = slicer.vtkMRMLMarkupsFiducialNode()
 
+    # FIDUCIAL MARKUPS
+        self.Contacts = slicer.vtkMRMLMarkupsFiducialNode()
+        slicer.mrmlScene.AddNode(self.Contacts)
+        self.Contacts.GetDisplayNode().SetTextScale(0)
+        self.Contacts.GetDisplayNode().SetGlyphScale(1.5)
+        self.Contacts.GetDisplayNode().SetColor(255,0,4)
+        self.Contacts.GetDisplayNode().SetVisibility(False)
+        self.creation = True
+        
+
+    def Observer(self):
+        self.Line.AddObserver(slicer.vtkMRMLMarkupsNode.PointEndInteractionEvent, self.onMarkupEndInteraction)
+        
+    def onMarkupEndInteraction(self, caller, event):
+        markupsNode = caller
+        sliceView = markupsNode.GetAttribute("Markups.MovingInSliceView")
+        movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
+        self.Line.AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent, self.onMarkupChanged)
+        self.ElectrodeContact()
+        
+        
+    def onMarkupChanged(self, caller, event):
+        markupsNode = caller
+        sliceView = markupsNode.GetAttribute("Markups.MovingInSliceView")
+        movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
+        self.ElectrodeContact()
+             
+            
     def Add(self):
         interactionNode = slicer.app.applicationLogic().GetInteractionNode()
         Node = slicer.app.applicationLogic().GetSelectionNode()
@@ -369,40 +421,69 @@ class LineNode():
     
     def DeleteNode(self):
         slicer.mrmlScene.RemoveNode(self.Line)
+        slicer.mrmlScene.RemoveNode(self.Contacts)
 
-    
-    def FiducialCreation(self):
-        pass
+    def Apply(self):
+        self.FiducialCreation()
+        self.ElectrodeContact()
+      
+
     def vectorLine(self):
        self.line = slicer.util.arrayFromMarkupsControlPoints(self.Line)
-       self.Distance = np.linalg.norm((self.line[0]-self.line[1]))
-       self.versor = (self.line[1]-self.line[0])/self.Distance
-       print(self.line[1])
-       print(self.line[0])
-       print(self.versor)
-       
- 
-
+       Distance = np.linalg.norm((self.line[0]-self.line[1]))
+       versor = (self.line[1]-self.line[0])/Distance
+       print(versor)
+       return versor, Distance
+    
+    def FiducialCreation(self):
+        if self.creation:
+            position = [0,0,0]
+            for elements in range (9):
+                self.Contacts.AddControlPoint(position)
+                print(elements)
+            
+            self.creation = False
+         
     def ElectrodeContact(self):
-       slicer.mrmlScene.AddNode(self.Contacts)
-       self.Contacts.GetDisplayNode().SetTextScale(0)
-       self.Contacts.GetDisplayNode().SetGlyphScale(1.5)
-       self.Contacts.GetDisplayNode().SetColor(255,0,4)
-       self.factor = 10
-       spacing = self.Distance/factor 
-       step = 1
-       position = spacing*step
-       for step in range(factor-1):
-        position = self.line[0] + self.versor*spacing*(step+1)
-        self.Contacts.AddControlPointWorld(position)
+        self.Contacts.GetDisplayNode().SetVisibility(True)
+        versor, distance = self.vectorLine() 
+        self.factor = 10
+        spacing = distance/self.factor 
+        step = 1
+        position = spacing*step
+        for step in range(self.factor-1):
+            position = self.line[0] + versor*spacing*(step+1)
+            self.Contacts.SetNthFiducialPositionFromArray(step, position)
+
+    def ViewOff(self):
+        self.Line.GetDisplayNode().SetVisibility(False)
+
+    def ViewOn(self):
+        self.Line.GetDisplayNode().SetVisibility(True)
         
-        
-        
-        
-        
+class Button(qt.QPushButton):
+    def __init__(self, name = '', width = 30):
+        qt.QPushButton.__init__(self)
+
+        # Set default parameters
+        #self.setFixedSize(width, width)
+        self.setCursor(qt.Qt.PointingHandCursor)
+        self.name = name
+        #self.width = width
+
+        self.images = {
+            "Add": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/plus.png",
+            "Delete": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png",
+            "Apply": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png",
+        } 
+        self.setImage(width-5)
+
+    def setImage(self, size):
+        self.setIcon(qt.QIcon(qt.QPixmap(self.images[self.name])))
+        self.setIconSize(qt.QSize(size,size))
+        self.setStyleSheet('text-align: center;')
 
         
-
         
 class PyToogle(qt.QCheckBox):
     def __init__(self, width = 40,  bg_color = '#777', circle_color = '#C4C4C4', active_color = '#0B8C05'):
