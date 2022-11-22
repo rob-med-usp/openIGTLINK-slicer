@@ -293,6 +293,12 @@ class MarkupClass(Fiducial_and_LineWidget):
         del self.Lines[self.id]
         self.SelectionNode.removeItem(self.id)
     
+    def RenameResponse(self):
+        self.node.Rename(self.LineName.text)
+
+    def selectAll(self):
+         self.LineName.selectAll()
+
 
     def setupMarkup(self):
     # FONT
@@ -349,17 +355,18 @@ class MarkupClass(Fiducial_and_LineWidget):
         self.SwitchLine.stateChanged.connect(self.ResponseSwitchLine)
 
         self.LineName = qt.QLineEdit('Line Name')
+        self.LineName.setAlignment(qt.Qt.AlignCenter)
+      
 
     # BUTTON CLASS
     
-        ButtonsList = [Button('Add'), Button('Delete'), Button ('Apply')]
+        ButtonsList = [Button('Add'), Button('Delete'), Button ('Apply'), Button('Rename')]
 
         # BUTTON LAYOUT
         AddDeleteButton = qt.QHBoxLayout()
-        AddDeleteButton.addWidget(ButtonsList[0])
-        AddDeleteButton.addWidget(ButtonsList[1])
-        AddDeleteButton.addWidget(ButtonsList[2])
-
+        for element in range(len(ButtonsList)-1):
+            AddDeleteButton.addWidget(ButtonsList[element])
+       
         # AddDeleteButton = qt.QGridLayout()
         # AddDeleteButton.addWidget(ButtonsList[0],0,0)
         # AddDeleteButton.addWidget(ButtonsList[1],0,1)
@@ -369,9 +376,15 @@ class MarkupClass(Fiducial_and_LineWidget):
         ButtonsList[0].connect('clicked()', self.AddResponse)
         ButtonsList[1].connect('clicked()', self.DeleteResponse)
         ButtonsList[2].connect('clicked()', self.ApplyResponse)
+        ButtonsList[3].connect('clicked()', self.RenameResponse)
+
+        nameLayout = qt.QGridLayout()
+        nameLayout.addWidget(self.LineName, 0, 0, 1, 1)
+        nameLayout.addWidget(ButtonsList[3], 0, 2)
+
     
     # LAYOUT
-        WidgetList = [SwitchLayout, SelectionNodeLayout, AddDeleteButton]
+        WidgetList = [SwitchLayout, SelectionNodeLayout, AddDeleteButton, nameLayout]
         MarkupLayout = qt.QVBoxLayout(MarkupsCollapsibleButton)
         for element in WidgetList:
             MarkupLayout.addLayout(element)
@@ -427,6 +440,8 @@ class LineNode():
         self.FiducialCreation()
         self.ElectrodeContact()
       
+    def Rename(self, name):
+        self.Line.SetName(name)
 
     def vectorLine(self):
        self.line = slicer.util.arrayFromMarkupsControlPoints(self.Line)
@@ -475,6 +490,7 @@ class Button(qt.QPushButton):
             "Add": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/plus.png",
             "Delete": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png",
             "Apply": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png",
+            "Rename": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/rename.png",
         } 
         self.setImage(width-5)
 
