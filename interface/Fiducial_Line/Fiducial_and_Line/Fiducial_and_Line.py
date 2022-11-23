@@ -1,12 +1,8 @@
 import logging
 import os
-from typing import List
 import numpy as np
 import slicer, ctk, vtk, qt
 from slicer.ScriptedLoadableModule import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 import sys
 
 #
@@ -248,6 +244,7 @@ class MarkupClass(Fiducial_and_LineWidget):
             if self.confirm:
                 self.node.Observer()
             self.ResponseSwitchLine()
+            self.RenameResponse()
         else:
             self.id = self.SelectionNode.currentIndex
             
@@ -262,23 +259,35 @@ class MarkupClass(Fiducial_and_LineWidget):
             for elements in self.Lines:
                 elements.ViewOn()
 
+    def nameTest(self, idx):
+        
+        if self.LineName.text != 'Line Name' and self.LineName.text != '':
+            name = self.LineName.text
+        
+        else:
+            name = f'Line{idx+1}'
+        return name
+
     def AddResponse(self):
         idx = len(self.Lines)
         self.confirm = True
 
-        if self.LineName.text != 'Line Name' and self.LineName.text != '':
-            name = self.LineName.text
-            self.Lines.append(LineNode(name, idx))
-            self.NameLine.append(name)
+        # if self.LineName.text != 'Line Name' and self.LineName.text != '':
+        #     name = self.LineName.text
+        #     self.Lines.append(LineNode(name, idx))
+        #     self.NameLine.append(name)
             
         
-        else:
-            self.Lines.append(LineNode(f'Line{idx+1}', idx))
-            self.NameLine.append(f'Line{idx+1}')
-        
+        # else:
+        #     self.Lines.append(LineNode(f'Line{idx+1}', idx))
+        #     self.NameLine.append(f'Line{idx+1}')
+
+        name = self.nameTest(idx)
+        self.Lines.append(LineNode(name, idx))
+        self.NameLine.append(name)
         self.node = self.Lines[idx]
         self.node.Add()
-        self.SelectionNode.addItem(f'Line{idx+1}')
+        self.SelectionNode.addItem(name)
         self.SelectionNode.setCurrentIndex(idx)
 
     def ApplyResponse(self):
@@ -294,7 +303,9 @@ class MarkupClass(Fiducial_and_LineWidget):
         self.SelectionNode.removeItem(self.id)
     
     def RenameResponse(self):
-        self.node.Rename(self.LineName.text)
+        name = self.nameTest(self.id)
+        self.node.Rename(name)
+        self.SelectionNode.setItemText(self.id, name)
 
     def selectAll(self):
          self.LineName.selectAll()
@@ -445,9 +456,10 @@ class LineNode():
 
     def vectorLine(self):
        self.line = slicer.util.arrayFromMarkupsControlPoints(self.Line)
+       self.RegistrationArray = np.array([self.line[0], self.line[1]])
+       print(self.RegistrationArray)
        Distance = np.linalg.norm((self.line[0]-self.line[1]))
        versor = (self.line[1]-self.line[0])/Distance
-       print(versor)
        return versor, Distance
     
     def FiducialCreation(self):
@@ -455,7 +467,6 @@ class LineNode():
             position = [0,0,0]
             for elements in range (9):
                 self.Contacts.AddControlPoint(position)
-                print(elements)
             
             self.creation = False
          
