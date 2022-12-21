@@ -327,29 +327,29 @@ class MarkupClass(Fiducial_and_LineWidget):
         
 ############################################################################################        
    
-    # IGT AREA
-        self.IGTCollapsibleButton = ctk.ctkCollapsibleButton()
-        self.IGTCollapsibleButton.text = "IGT connection"
+    # # IGT AREA
+    #     self.IGTCollapsibleButton = ctk.ctkCollapsibleButton()
+    #     self.IGTCollapsibleButton.text = "IGT connection"
 
-    # NODE 
-        self.IGTNode = slicer.vtkMRMLIGTLConnectorNode()
-        self.IGTNode.SetName('IGT Connector')
-        slicer.mrmlScene.AddNode(self.IGTNode)
-        self.IGTNode.SetTypeServer(18944)
-        self.IGTNode.SetTypeClient('localhost', 18944)
+    # # NODE 
+    #     self.IGTNode = slicer.vtkMRMLIGTLConnectorNode()
+    #     self.IGTNode.SetName('IGT Connector')
+    #     slicer.mrmlScene.AddNode(self.IGTNode)
+    #     self.IGTNode.SetTypeServer(18944)
+    #     self.IGTNode.SetTypeClient('localhost', 18944)
 
-    # LABEL
-        self.layout.addWidget(self.IGTCollapsibleButton)
-        IGTLayout = qt.QFormLayout(self.IGTCollapsibleButton)
-        self.IGTLabelSwitch = qt.QLabel("IGT connection")
-        self.IGTLabelSwitch.setFont(font)
+    # # LABEL
+    #     self.layout.addWidget(self.IGTCollapsibleButton)
+    #     IGTLayout = qt.QFormLayout(self.IGTCollapsibleButton)
+    #     self.IGTLabelSwitch = qt.QLabel("IGT connection")
+    #     self.IGTLabelSwitch.setFont(font)
     
-    # BUTTON
-        self.IGTSwitch = PyToogle()
-        IGTLayout.addRow(self.IGTLabelSwitch, self.IGTSwitch)
+    # # BUTTON
+    #     self.IGTSwitch = PyToogle()
+    #     IGTLayout.addRow(self.IGTLabelSwitch, self.IGTSwitch)
     
-    # CONNECTION
-        self.IGTSwitch.stateChanged.connect(self.ResponseSwitch)
+    # # CONNECTION
+    #     self.IGTSwitch.stateChanged.connect(self.ResponseSwitch)
 
 ############################################################################################      
     # LINE AREA
@@ -367,7 +367,6 @@ class MarkupClass(Fiducial_and_LineWidget):
 
         self.LineName = qt.QLineEdit('Line Name')
         self.LineName.setAlignment(qt.Qt.AlignCenter)
-      
 
     # BUTTON CLASS
     
@@ -498,10 +497,10 @@ class Button(qt.QPushButton):
         #self.width = width
 
         self.images = {
-            "Add": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/plus.png",
-            "Delete": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png",
-            "Apply": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png",
-            "Rename": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/rename.png",
+            "Add": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/plus.png",
+            "Delete": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png",
+            "Apply": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png",
+            "Rename": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/rename.png",
         } 
         self.setImage(width-5)
 
