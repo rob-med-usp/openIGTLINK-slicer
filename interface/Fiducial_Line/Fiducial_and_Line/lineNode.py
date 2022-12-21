@@ -16,9 +16,9 @@ class LineNode():
         self.Contacts = slicer.vtkMRMLMarkupsFiducialNode()
         slicer.mrmlScene.AddNode(self.Contacts)
         self.Contacts.GetDisplayNode().SetTextScale(0)
-        self.Contacts.GetDisplayNode().SetGlyphScale(1.5)
-        self.Contacts.GetDisplayNode().SetColor(255,0,4)
+        self.Contacts.GetDisplayNode().SetGlyphScale(1.0)
         self.Contacts.GetDisplayNode().SetVisibility(False)
+        
         self.creation = True
         
 
@@ -53,6 +53,8 @@ class LineNode():
     def Apply(self):
         self.FiducialCreation()
         self.ElectrodeContact()
+        self.Contacts.GetDisplayNode().SetSelectedColor(0.5,0.8,0)
+
       
     def Rename(self, name):
         self.Line.SetName(name)
@@ -60,11 +62,13 @@ class LineNode():
     def vectorLine(self):
        self.line = slicer.util.arrayFromMarkupsControlPoints(self.Line)
        self.RegistrationArray = np.array([self.line[0], self.line[1]])
-       print(self.RegistrationArray)
        Distance = np.linalg.norm((self.line[0]-self.line[1]))
        versor = (self.line[1]-self.line[0])/Distance
        return versor, Distance
-    
+
+    def PositionCallBack(self):
+        return slicer.util.arrayFromMarkupsControlPoints(self.Line)
+
     def FiducialCreation(self):
         if self.creation:
             position = [0,0,0]
@@ -72,6 +76,7 @@ class LineNode():
                 self.Contacts.AddControlPoint(position)
             
             self.creation = False
+        
          
     def ElectrodeContact(self):
         self.Contacts.GetDisplayNode().SetVisibility(True)
@@ -83,7 +88,7 @@ class LineNode():
         for step in range(self.factor-1):
             position = self.line[0] + versor*spacing*(step+1)
             self.Contacts.SetNthFiducialPositionFromArray(step, position)
-
+        self.Contacts.LockedOn()
     def ViewOff(self):
         self.Line.GetDisplayNode().SetVisibility(False)
 

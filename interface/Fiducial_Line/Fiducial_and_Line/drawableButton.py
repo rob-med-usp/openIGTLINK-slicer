@@ -15,6 +15,7 @@ class Button(qt.QPushButton):
             "Delete": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png",
             "Apply": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png",
             "Rename": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/rename.png",
+            "Share": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/share.png"
         } 
         self.setImage(width-5)
 

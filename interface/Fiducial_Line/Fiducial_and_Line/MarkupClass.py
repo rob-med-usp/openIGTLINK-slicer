@@ -79,6 +79,11 @@ class MarkupClass():
         name = self.nameTest(self.id)
         self.node.Rename(name)
         self.SelectionNode.setItemText(self.id, name)
+    
+    def ShareResponse(self):
+        self.node = self.Lines[self.id]
+        position = self.node.PositionCallBack()
+        print(position)
 
     def selectAll(self):
          self.LineName.selectAll()
@@ -114,31 +119,28 @@ class MarkupClass():
 
         self.LineName = qt.QLineEdit('Line Name')
         self.LineName.setAlignment(qt.Qt.AlignCenter)
-      
+    
 
     # BUTTON CLASS
     
-        ButtonsList = [Button('Add'), Button('Delete'), Button ('Apply'), Button('Rename')]
+        ButtonsList = [Button('Add'), Button('Delete'), Button ('Apply'),  Button('Share')]
+        rename =  Button('Rename')
 
         # BUTTON LAYOUT
         AddDeleteButton = qt.QHBoxLayout()
-        for element in range(len(ButtonsList)-1):
+        for element in range(len(ButtonsList)):
             AddDeleteButton.addWidget(ButtonsList[element])
-       
-        # AddDeleteButton = qt.QGridLayout()
-        # AddDeleteButton.addWidget(ButtonsList[0],0,0)
-        # AddDeleteButton.addWidget(ButtonsList[1],0,1)
-        # AddDeleteButton.addWidget(ButtonsList[2],1,0)
         
         # BUTTON CONNECTION
         ButtonsList[0].connect('clicked()', self.AddResponse)
         ButtonsList[1].connect('clicked()', self.DeleteResponse)
         ButtonsList[2].connect('clicked()', self.ApplyResponse)
-        ButtonsList[3].connect('clicked()', self.RenameResponse)
+        ButtonsList[3].connect('clicked()', self.ShareResponse)
+        rename.connect('clicked()', self.RenameResponse)
 
         nameLayout = qt.QGridLayout()
         nameLayout.addWidget(self.LineName, 0, 0, 1, 1)
-        nameLayout.addWidget(ButtonsList[3], 0, 2)
+        nameLayout.addWidget(rename, 0, 2)
 
     
     # LAYOUT
