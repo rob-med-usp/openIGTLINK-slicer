@@ -1,7 +1,7 @@
 import slicer, qt, ctk
 from Switch import PyToogle
 
-class IGT(): 
+class IGTLink(): 
     def __init__(self, layout):
         self.layout = layout
     # NODE 
@@ -17,7 +17,7 @@ class IGT():
         else:
             self.IGTNode.Stop()
 
-    def SetupIGT(self):
+    def SetupIGTLink(self):
         font = qt.QFont()
         font.setPixelSize(14)
         # IGT AREA
@@ -35,3 +35,5 @@ class IGT():
     
         # CONNECTION
         self.IGTSwitch.stateChanged.connect(self.ResponseSwitch)
+
+    

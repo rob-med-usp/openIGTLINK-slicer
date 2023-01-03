@@ -1,4 +1,5 @@
 import qt
+import os
 
 class Button(qt.QPushButton):
     def __init__(self, name = '', width = 30):
@@ -10,13 +11,22 @@ class Button(qt.QPushButton):
         self.name = name
         #self.width = width
 
+        # get path of this file
+        script_path = os.path.dirname(__file__)
+        print("Script path ="+ script_path)
+
+        # Set images path
         self.images = {
-            "Add": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/plus.png",
-            "Delete": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png",
-            "Apply": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png",
-            "Rename": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/rename.png",
-            "Share": "/home/eduardo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/share.png"
+            "Add": "ImageButton/plus.png",
+            "Delete": "ImageButton/delete.png",
+            "Apply": "ImageButton/apply.png",
+            "Rename": "ImageButton/rename.png",
+            "Share": "ImageButton/share.png"
         } 
+
+        # set images above with relative path
+        self.images = {k: os.path.join(script_path, v) for k, v in self.images.items()}
+
         self.setImage(width-5)
 
     def setImage(self, size):

@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lineNode import LineNode
 from drawableButton import Button
 from Switch import PyToogle
-from IGTClass import IGT
+from IGTClass import IGTLink
+from simple_connection import SimpleConnection
 
 class MarkupClass():
     def __init__(self, layout): 
@@ -17,7 +18,6 @@ class MarkupClass():
         self.NameLine = []
         self.confirm = False
 
- 
     def selectionchange(self):
         if len(self.NameLine)>0:
             select = slicer.mrmlScene.GetNodeByID("vtkMRMLSelectionNodeSingleton")
@@ -62,11 +62,9 @@ class MarkupClass():
         self.SelectionNode.addItem(name)
         self.SelectionNode.setCurrentIndex(idx)
        
-
     def ApplyResponse(self):
         self.node = self.Lines[self.id]
         self.node.Apply()
-        
         
     def DeleteResponse(self):
         self.node = self.Lines[self.id]
@@ -83,16 +81,22 @@ class MarkupClass():
     def ShareResponse(self):
         self.node = self.Lines[self.id]
         position = self.node.PositionCallBack()
+        print("Sending control points position:")
         print(position)
+        self.SimpleConnection.sendElectrode(position)
+
 
     def selectAll(self):
          self.LineName.selectAll()
 
-
     def setupMarkup(self):
     # IGT
-        self.IGT = IGT(self.layout) 
-        self.IGT.SetupIGT()
+        # self.IGTLink = IGTLink(self.layout) 
+        # self.IGTLink.SetupIGTLink()
+    
+    # SIMPLE SOCKET CONNECTION
+        self.SimpleConnection = SimpleConnection(5000)
+    
     # FONT
         font = qt.QFont()
         font.setPixelSize(14) 
