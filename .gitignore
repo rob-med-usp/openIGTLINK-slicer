@@ -164,4 +164,4 @@ cython_debug/
 /registration/out/matrix.p
 /.vscode
 
-**/__pycache__/
+!**/__pycache__/
