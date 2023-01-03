@@ -163,3 +163,5 @@ cython_debug/
 /registration/out/matrix-reg.txt
 /registration/out/matrix.p
 /.vscode
+
+**/__pycache__/

@@ -5,6 +5,9 @@ import slicer, ctk, vtk, qt
 from slicer.ScriptedLoadableModule import *
 import sys
 
+sys.path.append(os.path.dirname(__file__))
+from MarkupClass import MarkupClass
+
 #
 # Fiducial_and_Line
 #
@@ -90,18 +93,7 @@ def registerSampleData():
 #
 
 class Fiducial_and_LineWidget(ScriptedLoadableModuleWidget):
-    """Uses ScriptedLoadableModuleWidget base class, available at:
-    https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
-    """
     def __init__(self, parent=None):
-        
-      
-       # ScriptedLoadableModuleWidget.__init__(self)
-       
-    #     """If parent widget is not specified: a top-level widget is created automatically;
-    #     the application has to delete this widget (by calling widget.parent.deleteLater() to avoid memory leaks.
-    #     """ 
-    #     # Get module name by stripping 'Widget' from the class name
         self.moduleName = self.__class__.__name__
         if self.moduleName.endswith('Widget'):
             self.moduleName = self.moduleName[:-6]
@@ -127,14 +119,7 @@ class Fiducial_and_LineWidget(ScriptedLoadableModuleWidget):
         return os.path.join(scriptedModulesPath, 'Resources', filename)
 
     def cleanup(self):
-        """Override this function to implement module widget specific cleanup.
-
-    #     It is invoked when the signal `qSlicerModuleManager::moduleAboutToBeUnloaded(QString)`
-    #     corresponding to the current module is emitted and just before a module is
-    #     effectively unloaded.
-    #     """
-    #     pass
-
+        pass
     def _onModuleAboutToBeUnloaded(self, moduleName):
         """This slot calls `cleanup()` if the module about to be unloaded is the
         current one.
@@ -153,11 +138,6 @@ class Fiducial_and_LineWidget(ScriptedLoadableModuleWidget):
             for element in elements:
                 rowLayout.addWidget(element)
             return rowLayout
-
-        #
-        # Reload and Test area
-        # Used during development, but hidden when delivering
-        # developer mode is turned off.
 
         self.reloadCollapsibleButton = ctk.ctkCollapsibleButton()
         self.reloadCollapsibleButton.text = "Reload && Test"
@@ -210,7 +190,6 @@ class Fiducial_and_LineWidget(ScriptedLoadableModuleWidget):
        
 
         self.Markup = MarkupClass(self.layout)
-        
         self.Markup.setupMarkup()
         
     def onReload(self):
@@ -222,363 +201,10 @@ class Fiducial_and_LineWidget(ScriptedLoadableModuleWidget):
         slicer.util.reloadScriptedModule(self.moduleName)
         slicer.mrmlScene.Clear()
 
-class MarkupClass(Fiducial_and_LineWidget):
-    def __init__(self, layout): 
-        self.layout = layout
-        self.Lines = []
-        self.NameLine = []
-        self.confirm = False
-
-    def ResponseSwitch(self):        
-        if self.IGTSwitch.isChecked():
-            self.IGTNode.Start()
-        
-        else:
-            self.IGTNode.Stop()
-                
-    def selectionchange(self):
-        if len(self.NameLine)>0:
-            select = slicer.mrmlScene.GetNodeByID("vtkMRMLSelectionNodeSingleton")
-            self.id = self.SelectionNode.currentIndex
-            select.SetActivePlaceNodeID(slicer.util.getNode(self.NameLine[self.id]).GetID())
-            if self.confirm:
-                self.node.Observer()
-            self.ResponseSwitchLine()
-            self.RenameResponse()
-        else:
-            self.id = self.SelectionNode.currentIndex
-            
-    def ResponseSwitchLine(self):
-        if self.SwitchLine.isChecked():
-            self.LabelLine.setText('Exclusive Line')
-            for idx in range(len(self.Lines)):
-                self.Lines[idx].ViewOff()
-            self.Lines[self.id].ViewOn()
-        else:
-            self.LabelLine.setText('All Lines')
-            for elements in self.Lines:
-                elements.ViewOn()
-
-    def nameTest(self, idx):
-        
-        if self.LineName.text != 'Line Name' and self.LineName.text != '':
-            name = self.LineName.text
-        
-        else:
-            name = f'Line{idx+1}'
-        return name
-
-    def AddResponse(self):
-        idx = len(self.Lines)
-        self.confirm = True
-
-        # if self.LineName.text != 'Line Name' and self.LineName.text != '':
-        #     name = self.LineName.text
-        #     self.Lines.append(LineNode(name, idx))
-        #     self.NameLine.append(name)
-            
-        
-        # else:
-        #     self.Lines.append(LineNode(f'Line{idx+1}', idx))
-        #     self.NameLine.append(f'Line{idx+1}')
-
-        name = self.nameTest(idx)
-        self.Lines.append(LineNode(name, idx))
-        self.NameLine.append(name)
-        self.node = self.Lines[idx]
-        self.node.Add()
-        self.SelectionNode.addItem(name)
-        self.SelectionNode.setCurrentIndex(idx)
-
-    def ApplyResponse(self):
-        self.node = self.Lines[self.id]
-        self.node.Apply()
-        
-        
-    def DeleteResponse(self):
-        self.node = self.Lines[self.id]
-        self.node.DeleteNode()
-        del self.NameLine[self.id]
-        del self.Lines[self.id]
-        self.SelectionNode.removeItem(self.id)
-    
-    def RenameResponse(self):
-        name = self.nameTest(self.id)
-        self.node.Rename(name)
-        self.SelectionNode.setItemText(self.id, name)
-
-    def selectAll(self):
-         self.LineName.selectAll()
-
-
-    def setupMarkup(self):
-    # FONT
-        font = qt.QFont()
-        font.setPixelSize(14) 
-
-    # SELECTION NODE LINE
-        self.SelectionNode = qt.QComboBox()
-        self.SelectionNode.addItems(self.NameLine)
-        self.SelectionNode.currentIndexChanged.connect(self.selectionchange)
-        SelectionNodeLayout = qt.QFormLayout()
-        SelecLineLabel = qt.QLabel("Selection Line")
-        SelecLineLabel.setFont(font)
-        SelectionNodeLayout.addRow(SelecLineLabel, self.SelectionNode)
-        
-############################################################################################        
-   
-    # # IGT AREA
-    #     self.IGTCollapsibleButton = ctk.ctkCollapsibleButton()
-    #     self.IGTCollapsibleButton.text = "IGT connection"
-
-    # # NODE 
-    #     self.IGTNode = slicer.vtkMRMLIGTLConnectorNode()
-    #     self.IGTNode.SetName('IGT Connector')
-    #     slicer.mrmlScene.AddNode(self.IGTNode)
-    #     self.IGTNode.SetTypeServer(18944)
-    #     self.IGTNode.SetTypeClient('localhost', 18944)
-
-    # # LABEL
-    #     self.layout.addWidget(self.IGTCollapsibleButton)
-    #     IGTLayout = qt.QFormLayout(self.IGTCollapsibleButton)
-    #     self.IGTLabelSwitch = qt.QLabel("IGT connection")
-    #     self.IGTLabelSwitch.setFont(font)
-    
-    # # BUTTON
-    #     self.IGTSwitch = PyToogle()
-    #     IGTLayout.addRow(self.IGTLabelSwitch, self.IGTSwitch)
-    
-    # # CONNECTION
-    #     self.IGTSwitch.stateChanged.connect(self.ResponseSwitch)
-
-############################################################################################      
-    # LINE AREA
-
-        MarkupsCollapsibleButton = ctk.ctkCollapsibleButton()
-        MarkupsCollapsibleButton.text = "Fiducial and Line"
-        self.layout.addWidget(MarkupsCollapsibleButton)
-        self.SwitchLine = PyToogle()
-        self.LabelLine = qt.QLabel("All Lines")
-        self.LabelLine.setFont(font)
-        SwitchLayout = qt.QGridLayout()
-        SwitchLayout.addWidget(self.LabelLine, 0, 0)
-        SwitchLayout.addWidget(self.SwitchLine, 0, 2)
-        self.SwitchLine.stateChanged.connect(self.ResponseSwitchLine)
-
-        self.LineName = qt.QLineEdit('Line Name')
-        self.LineName.setAlignment(qt.Qt.AlignCenter)
-
-    # BUTTON CLASS
-    
-        ButtonsList = [Button('Add'), Button('Delete'), Button ('Apply'), Button('Rename')]
-
-        # BUTTON LAYOUT
-        AddDeleteButton = qt.QHBoxLayout()
-        for element in range(len(ButtonsList)-1):
-            AddDeleteButton.addWidget(ButtonsList[element])
-       
-        # AddDeleteButton = qt.QGridLayout()
-        # AddDeleteButton.addWidget(ButtonsList[0],0,0)
-        # AddDeleteButton.addWidget(ButtonsList[1],0,1)
-        # AddDeleteButton.addWidget(ButtonsList[2],1,0)
-        
-        # BUTTON CONNECTION
-        ButtonsList[0].connect('clicked()', self.AddResponse)
-        ButtonsList[1].connect('clicked()', self.DeleteResponse)
-        ButtonsList[2].connect('clicked()', self.ApplyResponse)
-        ButtonsList[3].connect('clicked()', self.RenameResponse)
-
-        nameLayout = qt.QGridLayout()
-        nameLayout.addWidget(self.LineName, 0, 0, 1, 1)
-        nameLayout.addWidget(ButtonsList[3], 0, 2)
-
-    
-    # LAYOUT
-        WidgetList = [SwitchLayout, SelectionNodeLayout, AddDeleteButton, nameLayout]
-        MarkupLayout = qt.QVBoxLayout(MarkupsCollapsibleButton)
-        for element in WidgetList:
-            MarkupLayout.addLayout(element)
-        
-class LineNode():
-    def __init__(self, name, id):
-    
-    # LINE MARKUPS
-        self.Line = slicer.vtkMRMLMarkupsLineNode()
-        slicer.mrmlScene.AddNode(self.Line)
-        self.Line.SetName(f"{name}")
-        self.Line.GetDisplayNode().SetVisibility(True)
-
-    # FIDUCIAL MARKUPS
-        self.Contacts = slicer.vtkMRMLMarkupsFiducialNode()
-        slicer.mrmlScene.AddNode(self.Contacts)
-        self.Contacts.GetDisplayNode().SetTextScale(0)
-        self.Contacts.GetDisplayNode().SetGlyphScale(1.5)
-        self.Contacts.GetDisplayNode().SetColor(255,0,4)
-        self.Contacts.GetDisplayNode().SetVisibility(False)
-        self.creation = True
-        
-
-    def Observer(self):
-        self.Line.AddObserver(slicer.vtkMRMLMarkupsNode.PointEndInteractionEvent, self.onMarkupEndInteraction)
-        
-    def onMarkupEndInteraction(self, caller, event):
-        markupsNode = caller
-        sliceView = markupsNode.GetAttribute("Markups.MovingInSliceView")
-        movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
-        self.Line.AddObserver(slicer.vtkMRMLMarkupsNode.PointModifiedEvent, self.onMarkupChanged)
-        self.ElectrodeContact()
-        
-        
-    def onMarkupChanged(self, caller, event):
-        markupsNode = caller
-        sliceView = markupsNode.GetAttribute("Markups.MovingInSliceView")
-        movingMarkupIndex = markupsNode.GetDisplayNode().GetActiveControlPoint()
-        self.ElectrodeContact()
-             
-            
-    def Add(self):
-        interactionNode = slicer.app.applicationLogic().GetInteractionNode()
-        Node = slicer.app.applicationLogic().GetSelectionNode()
-        Node.SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsLineNode")
-        interactionNode.SetCurrentInteractionMode(interactionNode.Place)
-    
-    def DeleteNode(self):
-        slicer.mrmlScene.RemoveNode(self.Line)
-        slicer.mrmlScene.RemoveNode(self.Contacts)
-
-    def Apply(self):
-        self.FiducialCreation()
-        self.ElectrodeContact()
-      
-    def Rename(self, name):
-        self.Line.SetName(name)
-
-    def vectorLine(self):
-       self.line = slicer.util.arrayFromMarkupsControlPoints(self.Line)
-       self.RegistrationArray = np.array([self.line[0], self.line[1]])
-       print(self.RegistrationArray)
-       Distance = np.linalg.norm((self.line[0]-self.line[1]))
-       versor = (self.line[1]-self.line[0])/Distance
-       return versor, Distance
-    
-    def FiducialCreation(self):
-        if self.creation:
-            position = [0,0,0]
-            for elements in range (9):
-                self.Contacts.AddControlPoint(position)
-            
-            self.creation = False
-         
-    def ElectrodeContact(self):
-        self.Contacts.GetDisplayNode().SetVisibility(True)
-        versor, distance = self.vectorLine() 
-        self.factor = 10
-        spacing = distance/self.factor 
-        step = 1
-        position = spacing*step
-        for step in range(self.factor-1):
-            position = self.line[0] + versor*spacing*(step+1)
-            self.Contacts.SetNthFiducialPositionFromArray(step, position)
-
-    def ViewOff(self):
-        self.Line.GetDisplayNode().SetVisibility(False)
-
-    def ViewOn(self):
-        self.Line.GetDisplayNode().SetVisibility(True)
-        
-class Button(qt.QPushButton):
-    def __init__(self, name = '', width = 30):
-        qt.QPushButton.__init__(self)
-
-        # Set default parameters
-        #self.setFixedSize(width, width)
-        self.setCursor(qt.Qt.PointingHandCursor)
-        self.name = name
-        #self.width = width
-
-        self.images = {
-            "Add": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/plus.png",
-            "Delete": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/delete.png",
-            "Apply": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/apply.png",
-            "Rename": "/home/guisoares/soares_repo/openIGTLINK-slicer/interface/Fiducial_Line/Fiducial_and_Line/ImageButton/rename.png",
-        } 
-        self.setImage(width-5)
-
-    def setImage(self, size):
-        self.setIcon(qt.QIcon(qt.QPixmap(self.images[self.name])))
-        self.setIconSize(qt.QSize(size,size))
-        self.setStyleSheet('text-align: center;')
-
-        
-        
-class PyToogle(qt.QCheckBox):
-    def __init__(self, width = 40,  bg_color = '#777', circle_color = '#C4C4C4', active_color = '#0B8C05'):
-        qt.QCheckBox.__init__(self)
-
-        # Set default parameters
-        self.setFixedSize(width, 22)
-        self.setCursor(qt.Qt.PointingHandCursor)
-        
-        # Colors 
-        self._bg_color = bg_color
-        self._circle_color = circle_color
-        self._active_color = active_color        
-
-    # SET NEW HIT AREA
-    def hitButton(self, pos: qt.QPoint):
-        # Torna toda a área do retângulo reponsiva ao click
-        return self.contentsRect().contains(pos)
-        
-    #DRAW NEW ITENS
-    # Essa função se sobrepõe no layout padrão
-    def paintEvent(self, e):
-        
-        # SET PAINTER
-        painter = qt.QPainter(self)
-        painter.setRenderHint(qt.QPainter.Antialiasing)
-
-        # SET AS NO PEN
-        painter.setPen(qt.Qt.NoPen)
-
-        # DRAW RECTANGLE
-        rect = qt.QRect(0, 0, self.width, self.height)
-
-        #CHECK IF IS CHECKED
-        if not self.isChecked():
-            # DRAW BG
-            painter.setBrush(qt.QColor(self._bg_color))
-            painter.drawRoundedRect(0,0, rect.width(), self.height, self.height/2, 11)
-
-            # DRAW CIRCLE 
-            painter.setBrush(qt.QColor(self._circle_color))
-            painter.drawEllipse(2, 2, 18, 18)
-
-        else:
-            # DRAW BG
-            painter.setBrush(qt.QColor(self._active_color))
-            painter.drawRoundedRect(0, 0, rect.width(), self.height, self.height/2, 11)
-
-            # DRAW CIRCLE 
-            painter.setBrush(qt.QColor(self._circle_color))
-            painter.drawEllipse(self.width - 20, 2, 18, 18)
-
-        # END DRAW
-        painter.end()
-        
 class Fiducial_and_LineLogic(ScriptedLoadableModuleLogic):
-    """This class should implement all the actual
-    computation done by your module.  The interface
-    should be such that other python code can import
-    this class and make use of the functionality without
-    requiring an instance of the Widget.
-    Uses ScriptedLoadableModuleLogic base class, available at:
-    https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
-    """
 
     def __init__(self):
-        """
-        Called when the logic class is instantiated. Can be used for initializing member variables.
-        """
+  
         ScriptedLoadableModuleLogic.__init__(self)
 
     def setDefaultParameters(self, parameterNode):
@@ -591,15 +217,6 @@ class Fiducial_and_LineLogic(ScriptedLoadableModuleLogic):
             parameterNode.SetParameter("Invert", "false")
 
     def process(self, inputVolume, outputVolume, imageThreshold, invert=False, showResult=True):
-        """
-        Run the processing algorithm.
-        Can be used without GUI widget.
-        :param inputVolume: volume to be thresholded
-        :param outputVolume: thresholding result
-        :param imageThreshold: values above/below this threshold will be set to 0
-        :param invert: if True then values above the threshold will be set to 0, otherwise values below are set to 0
-        :param showResult: show output volume in slice viewers
-        """
 
         if not inputVolume or not outputVolume:
             raise ValueError("Input or output volume is invalid")
@@ -623,40 +240,15 @@ class Fiducial_and_LineLogic(ScriptedLoadableModuleLogic):
         logging.info(f'Processing completed in {stopTime-startTime:.2f} seconds')
 
 
-#
-# Fiducial_and_LineTest
-#
-
 class Fiducial_and_LineTest(ScriptedLoadableModuleTest):
-    """
-    This is the test case for your scripted module.
-    Uses ScriptedLoadableModuleTest base class, available at:
-    https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
-    """
-
     def setUp(self):
-        """ Do whatever is needed to reset the state - typically a scene clear will be enough.
-        """
         slicer.mrmlScene.Clear()
 
     def runTest(self):
-        """Run as few or as many tests as needed here.
-        """
         self.setUp()
         self.test_Fiducial_and_Line1()
 
     def test_Fiducial_and_Line1(self):
-        """ Ideally you should have several levels of tests.  At the lowest level
-        tests should exercise the functionality of the logic with different inputs
-        (both valid and invalid).  At higher levels your tests should emulate the
-        way the user would interact with your code and confirm that it still works
-        the way you intended.
-        One of the most important features of the tests is that it should alert other
-        developers when their changes will have an impact on the behavior of your
-        module.  For example, if a developer removes a feature that you depend on,
-        your test should break so they know that the feature is needed.
-        """
-
         self.delayDisplay("Starting the test")
 
         # Get/create input data
